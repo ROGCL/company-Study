@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>达人扣税计算器</title>
+    <!-- 必须先引入vue，  后使用element-ui -->
+    <script src="https://cdn.bootcss.com/vue/2.5.16/vue.min.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/store2/2.14.2/store2.min.js"></script>
+</head>
+
+<body>
+    <div class="mybox counter">
+        <div class="box">
+            <div class="center">
+                <div class="title">
+                    计算器
+                </div>
+                <div class="mybox">
+                    <el-form ref="form" :model="form" :rules="rules" label-width="80px"
+                        style="width:300px;padding: 40px 0 0 0;">
+                        <el-form-item label="平台" prop="select">
+                            <el-select v-model="form.select" placeholder="请选择">
+                                <el-option label="快手" value="1">
+                                </el-option>
+                                <el-option label="抖音" value="2">
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="下单价" prop="placeAnOrder">
+                            <el-input v-model="form.placeAnOrder"></el-input>
+                        </el-form-item>
+                        <el-form-item label="合作价" prop="cooperation">
+                            <el-input v-model="form.cooperation"></el-input>
+                        </el-form-item>
+                        <el-form-item label="筛选项">
+                            <el-radio v-model="form.radio" label="1">各自承担手续费税费</el-radio>
+                            <el-radio v-model="form.radio" label="2">我司承担博主手续费</el-radio>
+                            <el-radio v-model="form.radio" label="3">我司承担博主税费</el-radio>
+                            <el-radio v-model="form.radio" label="4">我司承担博主手续费、税费=博主到手价</el-radio>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button size="small" type="primary" @click="onSubmit">计算</el-button>
+                            <el-button size="small" @click="clearForm">重置</el-button>
+                        </el-form-item>
+                    </el-form>
+                </div>
+                <div class="btm_text"><span style="color: red;">*</span>快手平台个税计算规则仅适用于达人首次提现</div>
+            </div>
+            <div class="center">
+                <div class="title">
+                    计算结果
+                </div>
+                <div class="content">
+                    <p>手续费 : <span class="big_font">{{serviceCharge}}</span> 元</p>
+                    <p>实付金额 : <span class="big_font">{{paidInAmount}}</span> 元</p>
+                    <p>缴纳个税 : <span class="big_font">{{payPersonalTax}}</span> 元</p>
+                    <p>返款金额 : <span class="big_font">{{refundAmount}}</span> 元</p>
+                    <p>预估达人到手金额 : <span class="big_font">{{amountReceived}}</span> 元</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script>
+    new Vue({
+        el: '.counter', //el用于指定当前Vue实例为哪个容器服务，值通常为选择器字符串。
+        data: { //data中用于存储数据，数据供el所指定的容器去使用。
+            form: {
+                select: "",
+                cooperation: "",
+                placeAnOrder: "",
+                radio: '1'
+            },
+            rules: {
+                select: [{
+                    required: true,
+                    message: '请选择平台',
+                    trigger: 'blur'
+                }, ],
+                cooperation: [{
+                    required: true,
+                    message: '请输入合作价',
+                    trigger: 'blur'
+                }, ],
+                placeAnOrder: [{
+                    required: true,
+                    message: '请输入下单价',
+                    trigger: 'blur'
+                }, ],
+            },
+            flag: false,
+            // 手续费
+            serviceCharge: 0,
+            // 实付金额
+            paidInAmount: 0,
+            // 缴纳个税
+            payPersonalTax: 0,
+            // 返款金额
+            refundAmount: 0,
+            // 预估达人到手金额
+            amountReceived: 0,
+        },
+        created() {
+            // 登录鉴权
+            let loginToken = localStorage.getItem('loginToken')
+            let user = localStorage.getItem('user')
+            user =  JSON.parse(user)
+            console.log(loginToken, user,'loginToken')
+            if (loginToken) {
+                loginToken = loginToken.replace(/^(\s|")+|(\s|")+$/g, '');
+                console.log('%czt_web.html line:118 object', 'color: #007acc;', location.href);
+                let baseUrl = 'http://madmin.nineton.cn/Admin/'
+                if(location.href.indexOf('https')>-1){
+                    baseUrl = 'https://madmin.nineton.cn/Admin/'
+                }else{
+                    baseUrl = 'http://madmin.nineton.cn/Admin/'
+                }
+                console.log('%czt_web.html line:124 object', 'color: #007acc;', baseUrl);
+                axios.post(`${baseUrl}Operate_Invest/targetList`, {
+                    loginToken: loginToken,
+                    loginId: user.id
+                }).then(res => {
+                    if (res.data.code != 1) {
+                        window.location.href = 'http://madmin.nineton.cn/'
+                    }
+                }).catch(err => {
+                    window.location.href = 'http://madmin.nineton.cn/'
+                })
+            }else{
+                window.location.href = 'http://madmin.nineton.cn/'
+            }
+
+        },
+        methods: {
+            onSubmit() {
+                this.$refs['form'].validate((valid) => {
+                    if (valid) {
+                        // 如果下单价等于合作价 快手
+                        if (this.form.select == 1 && this.form.cooperation === this.form.placeAnOrder) {
+                            this.serviceCharge = parseFloat(this.form.placeAnOrder * 0.05).toFixed(2)
+                            let payPersonalTax = parseFloat(this.form.placeAnOrder * 0.95).toFixed(2)
+                            if (payPersonalTax < 800) {
+                                this.payPersonalTax = 0
+                            } else if (payPersonalTax > 800 && payPersonalTax < 4000) {
+                                this.payPersonalTax = parseFloat((payPersonalTax - 800) * 0.2).toFixed(
+                                    2)
+                            } else {
+                                payPersonalTax = payPersonalTax * 0.8
+                                if (payPersonalTax < 20000) {
+                                    this.payPersonalTax = parseFloat(payPersonalTax * 0.2).toFixed(2)
+                                } else if (payPersonalTax > 20000 && payPersonalTax < 50000) {
+                                    this.payPersonalTax = parseFloat((payPersonalTax * 0.3) - 2000)
+                                        .toFixed(2)
+                                } else {
+                                    this.payPersonalTax = parseFloat((payPersonalTax * 0.4) - 7000)
+                                        .toFixed(2)
+                                }
+                            }
+                            this.refundAmount = 0
+                            this.amountReceived = parseFloat((this.form.placeAnOrder - this
+                                .serviceCharge - this.payPersonalTax)).toFixed(2)
+                            if (this.form.radio == "1") {
+                                this.paidInAmount = parseFloat(this.form.placeAnOrder * 1.05).toFixed(2)
+                            } else if (this.form.radio == '2') {
+                                this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + Number(
+                                    this.serviceCharge)).toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + Number(
+                                    this.payPersonalTax)).toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + Number(
+                                    this.serviceCharge) + Number(this.payPersonalTax)).toFixed(2)
+                            }
+                            if (this.form.radio == '2') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.serviceCharge)
+                                    .toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.payPersonalTax)
+                                    .toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.serviceCharge -
+                                    this.payPersonalTax).toFixed(2)
+                            }
+                            if (this.form.radio == '2') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.serviceCharge)).toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.payPersonalTax)).toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.serviceCharge) + Number(this.payPersonalTax)).toFixed(2)
+                            }
+                        }
+                        // 如果下单价等于合作价 抖音
+                        if (this.form.select == 2 && this.form.cooperation === this.form.placeAnOrder) {
+                            this.serviceCharge = parseFloat(this.form.placeAnOrder * 0.05).toFixed(2)
+                            this.payPersonalTax = 0
+                            this.refundAmount = 0
+                            this.amountReceived = parseFloat((this.form.placeAnOrder - this
+                                .serviceCharge)).toFixed(2)
+                            if (this.form.radio == "1") {
+                                this.paidInAmount = parseFloat(this.form.placeAnOrder * 1.05).toFixed(2)
+                            } else if (this.form.radio == '2') {
+                                this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + Number(
+                                    this.serviceCharge)).toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + Number(
+                                    this.payPersonalTax)).toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + Number(
+                                    this.serviceCharge) + Number(this.payPersonalTax)).toFixed(2)
+                            }
+                            if (this.form.radio == '2') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.serviceCharge)
+                                    .toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.payPersonalTax)
+                                    .toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.serviceCharge -
+                                    this.payPersonalTax).toFixed(2)
+                            }
+                            if (this.form.radio == '2') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.serviceCharge)).toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.payPersonalTax)).toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.serviceCharge) + Number(this.payPersonalTax)).toFixed(2)
+                            }
+                        }
+                        // 如果下单价大于合作价 快手
+                        if (this.form.select == 1 && this.form.placeAnOrder > this.form.cooperation) {
+                            this.serviceCharge = parseFloat(this.form.placeAnOrder * 0.05).toFixed(2)
+                            let payPersonalTax = parseFloat(this.form.placeAnOrder * 0.95).toFixed(2)
+                            if (payPersonalTax < 800) {
+                                this.payPersonalTax = 0
+                            } else if (payPersonalTax > 800 && payPersonalTax < 4000) {
+                                this.payPersonalTax = parseFloat((payPersonalTax - 800) * 0.2).toFixed(
+                                    2)
+                            } else {
+                                payPersonalTax = payPersonalTax * 0.8
+                                if (payPersonalTax < 20000) {
+                                    this.payPersonalTax = parseFloat(payPersonalTax * 0.2).toFixed(2)
+                                } else if (payPersonalTax > 20000 && payPersonalTax < 50000) {
+                                    this.payPersonalTax = parseFloat((payPersonalTax * 0.3) - 2000)
+                                        .toFixed(2)
+                                } else {
+                                    this.payPersonalTax = parseFloat((payPersonalTax * 0.4) - 7000)
+                                        .toFixed(2)
+                                }
+                            }
+                            this.refundAmount = parseFloat(this.form.placeAnOrder - this.form
+                                .cooperation).toFixed(2)
+                            this.amountReceived = parseFloat((this.form.placeAnOrder - this
+                                .serviceCharge - this.payPersonalTax - this.refundAmount)).toFixed(
+                                2)
+                            if (this.form.radio == "1") {
+                                this.paidInAmount = parseFloat(Number(this.form.cooperation) + Number(
+                                    this.serviceCharge)).toFixed(2)
+                            } else if (this.form.radio == '2') {
+                                this.paidInAmount = parseFloat(Number(this.form.cooperation) + Number(
+                                    this.serviceCharge) + Number(this.serviceCharge)).toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                console.log(this.form.cooperation,this.serviceCharge,this.payPersonalTax);
+                                this.paidInAmount = parseFloat(Number(this.form.cooperation) + Number(
+                                    this.serviceCharge) + Number(this.payPersonalTax)).toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.paidInAmount = parseFloat(Number(this.form.cooperation) + Number(
+                                    this.serviceCharge) + Number(this.serviceCharge) + Number(
+                                    this.payPersonalTax)).toFixed(2)
+                            }
+                            if (this.form.radio == '2') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.serviceCharge)
+                                    .toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.payPersonalTax)
+                                    .toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.serviceCharge -
+                                    this.payPersonalTax).toFixed(2)
+                            }
+                            if (this.form.radio == '2') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.serviceCharge)).toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.payPersonalTax)).toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.serviceCharge) + Number(this.payPersonalTax)).toFixed(2)
+                            }
+                        }
+                        // 如果下单价大于合作价 抖音
+                        if (this.form.select == 2 && this.form.placeAnOrder > this.form.cooperation) {
+                            this.serviceCharge = parseFloat(this.form.placeAnOrder * 0.05).toFixed(2)
+                            this.payPersonalTax = 0
+                            this.refundAmount = parseFloat(this.form.placeAnOrder - this.form
+                                .cooperation).toFixed(2)
+                            this.amountReceived = parseFloat((this.form.placeAnOrder - this
+                                .serviceCharge - this.refundAmount)).toFixed(2)
+                            if (this.form.radio == "1") {
+                                this.paidInAmount = parseFloat(Number(this.form.cooperation) + Number(
+                                    this.serviceCharge)).toFixed(2)
+                            } else if (this.form.radio == '2') {
+                                this.paidInAmount = parseFloat(Number(this.form.cooperation) + Number(
+                                    this.serviceCharge) + Number(this.serviceCharge)).toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.paidInAmount = parseFloat(Number(this.form.cooperation) + Number(
+                                    this.serviceCharge) + Number(this.payPersonalTax)).toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.paidInAmount = parseFloat(Number(this.form.cooperation) + Number(
+                                    this.serviceCharge) + Number(this.serviceCharge) + Number(
+                                    this.payPersonalTax)).toFixed(2)
+                            }
+                            if (this.form.radio == '2') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.serviceCharge)
+                                    .toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.payPersonalTax)
+                                    .toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.serviceCharge -
+                                    this.payPersonalTax).toFixed(2)
+                            }
+                            if (this.form.radio == '2') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.serviceCharge)).toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.payPersonalTax)).toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.serviceCharge) + Number(this.payPersonalTax)).toFixed(2)
+                            }
+                        }
+                        // 如果下单价小于合作价 快手
+                        if (this.form.select == 1 && this.form.placeAnOrder < this.form.cooperation) {
+                            this.serviceCharge = parseFloat(this.form.placeAnOrder * 0.05).toFixed(2)
+                            this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + (this.form
+                                .cooperation - this.form.placeAnOrder)).toFixed(2)
+                            let payPersonalTax = parseFloat(this.form.placeAnOrder * 0.95).toFixed(2)
+                            if (payPersonalTax < 800) {
+                                this.payPersonalTax = 0
+                            } else if (payPersonalTax > 800 && payPersonalTax < 4000) {
+                                this.payPersonalTax = parseFloat((payPersonalTax - 800) * 0.2).toFixed(
+                                    2)
+                            } else {
+                                payPersonalTax = payPersonalTax * 0.8
+                                if (payPersonalTax < 20000) {
+                                    this.payPersonalTax = parseFloat(payPersonalTax * 0.2).toFixed(2)
+                                } else if (payPersonalTax > 20000 && payPersonalTax < 50000) {
+                                    this.payPersonalTax = parseFloat((payPersonalTax * 0.3) - 2000)
+                                        .toFixed(2)
+                                } else {
+                                    this.payPersonalTax = parseFloat((payPersonalTax * 0.4) - 7000)
+                                        .toFixed(2)
+                                }
+                            }
+                            this.refundAmount = parseFloat(this.form.placeAnOrder - this.form
+                                .cooperation).toFixed(2)
+                            this.amountReceived = parseFloat((this.form.placeAnOrder - this
+                                .serviceCharge - this.payPersonalTax - this.refundAmount)).toFixed(
+                                2)
+                            if (this.form.radio == "1") {
+                                this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + (this
+                                    .form.cooperation - this.form.placeAnOrder)).toFixed(2)
+                            } else if (this.form.radio == '2') {
+                                this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + (this
+                                    .form.cooperation - this.form.placeAnOrder) + Number(this
+                                    .serviceCharge)).toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + (this
+                                    .form.cooperation - this.form.placeAnOrder) + Number(this
+                                    .payPersonalTax)).toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + (this
+                                    .form.cooperation - this.form.placeAnOrder) + Number(this
+                                    .serviceCharge) + Number(this.payPersonalTax)).toFixed(2)
+                            }
+                            if (this.form.radio == '2') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.serviceCharge)
+                                    .toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.payPersonalTax)
+                                    .toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.serviceCharge -
+                                    this.payPersonalTax).toFixed(2)
+                            }
+                            if (this.form.radio == '2') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.serviceCharge)).toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.payPersonalTax)).toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.serviceCharge) + Number(this.payPersonalTax)).toFixed(2)
+                            }
+                        }
+                        // 如果下单价小于合作价 抖音
+                        if (this.form.select == 2 && this.form.placeAnOrder < this.form.cooperation) {
+                            this.serviceCharge = parseFloat(this.form.placeAnOrder * 0.05).toFixed(2)
+                            this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + (this.form
+                                .cooperation - this.form.placeAnOrder)).toFixed(2)
+                            this.payPersonalTax = 0
+                            this.refundAmount = parseFloat(this.form.placeAnOrder - this.form
+                                .cooperation).toFixed(2)
+                            this.amountReceived = parseFloat((this.form.placeAnOrder - this
+                                .serviceCharge - this.refundAmount)).toFixed(2)
+                            if (this.form.radio == "1") {
+                                this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + (this
+                                    .form.cooperation - this.form.placeAnOrder)).toFixed(2)
+                            } else if (this.form.radio == '2') {
+                                this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + (this
+                                    .form.cooperation - this.form.placeAnOrder) + Number(this
+                                    .serviceCharge)).toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + (this
+                                    .form.cooperation - this.form.placeAnOrder) + Number(this
+                                    .payPersonalTax)).toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.paidInAmount = parseFloat((this.form.placeAnOrder * 1.05) + (this
+                                    .form.cooperation - this.form.placeAnOrder) + Number(this
+                                    .serviceCharge) + Number(this.payPersonalTax)).toFixed(2)
+                            }
+                            if (this.form.radio == '2') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.serviceCharge)
+                                    .toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.payPersonalTax)
+                                    .toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.refundAmount = parseFloat(this.refundAmount - this.serviceCharge -
+                                    this.payPersonalTax).toFixed(2)
+                            }
+                            if (this.form.radio == '2') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.serviceCharge)).toFixed(2)
+                            } else if (this.form.radio == '3') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.payPersonalTax)).toFixed(2)
+                            } else if (this.form.radio == '4') {
+                                this.amountReceived = parseFloat(Number(this.amountReceived) + Number(
+                                    this.serviceCharge) + Number(this.payPersonalTax)).toFixed(2)
+                            }
+                        }
+                        this.flag = true
+                    } else {
+                        console.log('error submit!!');
+                        return false;
+                    }
+                });
+            },
+            clearForm() {
+                this.$refs['form'].resetFields()
+                this.serviceCharge = 0
+                this.paidInAmount = 0
+                this.payPersonalTax = 0
+                this.refundAmount = 0
+                this.amountReceived = 0
+            }
+        }
+    })
+</script>
+
+<style>
+    .mybox {
+        display: flex;
+        justify-content: center;
+    }
+
+    .box {
+        width: 1200px;
+        display: flex;
+        justify-content: space-around;
+    }
+
+    .center {
+        border: 1px solid #ececec;
+        width: 500px;
+    }
+
+    .title {
+        text-align: center;
+        padding: 10px 0;
+        background-color: #ececec;
+    }
+
+    .content {
+        padding: 50px;
+    }
+
+    .big_font {
+        font-size: 20px;
+        font-weight: bold;
+        color: rgb(49, 48, 48);
+    }
+
+    .btm_text {
+        padding: 20px;
+        font-size: 14px;
+        color: rgb(70, 69, 69);
+        text-align: center;
+    }
+</style>
+
+</html>

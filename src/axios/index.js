@@ -1,7 +1,7 @@
 import _ from 'axios'
 
 const axios = _.create({
- baseURL:'http://192.168.3.191:9000',
+ baseURL:'http://172.168.11.229:9000',
  headers:{
     "Content-Type":"application/json",
  }

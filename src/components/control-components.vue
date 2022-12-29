@@ -4,12 +4,19 @@
     <!-- 头部固定栏 -->
     <div class="header">
       <!-- 管理中心文字 -->
-      <h1>管理中心</h1>
+      <h1 style="cursor: pointer;" @click="toManageCenter">管理中心</h1>
       <!-- 头像框 -->
-      <div class="img1"></div>
+      <!-- <div class="img1"></div> -->
+      <el-dropdown style="display:flex;">
+      <img src="@/assets/img/13.png" alt="" class="img1" />
+      <el-dropdown-menu slot="dropdown" style="text-align:center">
+        <el-dropdown-item @click.native="goStudyList">个人学习记录</el-dropdown-item>
+        <el-dropdown-item @click.native="leaveHome">退出登录</el-dropdown-item>
+      </el-dropdown-menu>
+    </el-dropdown>
     </div>
     <!-- 左侧边栏 -->
-    <div class="left-asideBar">
+    <div class="left-asideBar" ref="activeBar">
       <!-- 返回首页按钮 -->
       <router-link to="/homepages" style="text-decoration: none">
         <div class="btn1">返回首页</div>
@@ -24,7 +31,7 @@
   <router-link to="/recordLearning" class="delstyle">
     <div class="manage">
       <img src="@/assets/img/37.png" alt="" class="img-public icon-img2">
-      <h5>学习记录</h5>
+      <h5>登录授权管理</h5>
     </div>
   </router-link>
     </div>
@@ -35,14 +42,52 @@
 export default {
 data(){
     return{
+      address:""
     }
+},
+mounted(){
+  //截取路径为侧边栏动态样式做准备
+  this.splitAdress()
+},
+methods:{
+  splitAdress(){
+          //处理url参数的方法
+    let geturl = 
+      window.location.href
+    ;
+    let getqyinfo = geturl.split("#")[1];
+    this.address = getqyinfo
+    console.log(this.address,999)
+    this.changeAsideBarClass()
+    },
+    //改变侧边栏样式
+    changeAsideBarClass(){
+      if(this.address == '/symbolPages'){
+         this.$refs.activeBar.style = "height:106%"
+      }else if(this.address == '/imporantPages'){
+        this.$refs.activeBar.style = "height:125%"
+      }else if(this.address == '/recordLearning'){
+        this.$refs.activeBar.style = 'height:95%'
+      }
+    },
+  leaveHome(){
+    this.$router.push('/loginPages')
+    sessionStorage.removeItem('token')
+    
+   },
+   goStudyList(){
+    this.$router.push('/symbolPages')
+   },
+   toManageCenter(){
+    this.$router.push('/symbolPages')
+   }
 }
 }
 </script>
 
 <style scoped>
 .header {
-  display: flex;
+  /* display: flex; */
   position: relative;
   width: 100vw;
   height: 82px;
@@ -58,21 +103,19 @@ data(){
 }
 .img1 {
   position: absolute;
-  right: 32px;
-  top: 20px;
+  right: 105px;
+  top: -33px;
   width: 42px;
   height: 42px;
   border-radius: 42px;
-  background-image: url("@/assets/img/13.png");
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
+  cursor: pointer;
 }
 .left-asideBar {
   position: absolute;
   left: 0;
   top: 84px;
   width: 200px;
-  height: 100%;
+  height: 125%;
   background: #fff;
 }
 .btn1 {
@@ -98,6 +141,7 @@ data(){
   height: 18px;
   margin-left: 20px;
   margin-right: 8px;
+  transform: translateY(4px);
 }
 /* .manage:hover .img-public {
   content: url("@/assets/img/39.png");
@@ -124,6 +168,9 @@ data(){
 .delstyle{
     text-decoration: none;
     color: #000;
+}
+:deep(.el-dropdown-menu__item:hover) {
+  color: #2AB18B
 }
 </style>
 <style>

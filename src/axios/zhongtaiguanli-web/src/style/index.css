@@ -1,0 +1,60 @@
+@font-face {
+  font-family: "iconfont"; /* Project id 3649838 */
+  src: url('//at.alicdn.com/t/c/font_3649838_33lez97ste9.woff2?t=1666061348850') format('woff2'),
+       url('//at.alicdn.com/t/c/font_3649838_33lez97ste9.woff?t=1666061348850') format('woff'),
+       url('//at.alicdn.com/t/c/font_3649838_33lez97ste9.ttf?t=1666061348850') format('truetype');
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 14px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #555;
+}
+
+.icon-anzhuo:before {
+  content: "\e71e";
+}
+
+.icon-ios:before {
+  content: "\e626";
+}
+
+.icon-weixin:before {
+  content: "\e600";
+}
+
+.icon-baidu:before {
+  content: "\e621";
+}
+
+.icon-chrome:before {
+  content: "\e669";
+}
+
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+html /deep/ .el-select-dropdown .el-select-dropdown__item.selected,
+body /deep/ .el-select-dropdown .el-select-dropdown__item.selected {
+  color: #1890ff;
+  font-weight: normal;
+}
+html /deep/ .el-select-dropdown .el-select-dropdown__item.selected .iconfont,
+body /deep/ .el-select-dropdown .el-select-dropdown__item.selected .iconfont {
+  color: #1890ff;
+}
+html /deep/ .el-form .el-select,
+body /deep/ .el-form .el-select {
+  width: 100%;
+}
+html .password-notice div,
+body .password-notice div {
+  font-size: 16px !important;
+}

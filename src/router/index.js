@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
+import { Message } from 'element-ui';
 Vue.use(VueRouter)
 
 const routes = [
@@ -10,115 +11,21 @@ const routes = [
     {
         path: '/loginPages',
         name: 'loginPages',
-        component: () => import('@/pages/login-pages.vue')
+        component: () => import('@/pages/login/login-pages copy.vue')
     },
     {
         path: '/homePages',
         name: 'homePages',
-        component: () => import('@/pages/home-pages.vue'),
+        component: () => import('@/pages/home/home-pages.vue'),
         meta: {
             isAuth: true
         },
-        // 重定向到首页，默认显示首页
-        children: [
-            {
-                path: '/indexPages',
-                name: 'indexPages',
-                redirect: '/homePages',
-                component: () => import('@/pages/children/index-pages.vue'),
-                meta: {
-                    isAuth: true
-                }
-            },
-            {
-                path: '/onlinePages',
-                name: 'onlinePages',
-                component: () => import('@/pages/children/online-pages.vue'),
-                meta: {
-                    isAuth: true
-                },
-                children: [
-                    {
-                        path: 'analysisPages',
-                        name: 'analysisPages',
-                        component: () => import('@/pages/children/childrens/analysis-pages.vue'),
-                        meta: {
-                            isAuth: true
-                        },
-                    },
-                    {
-                        path: 'designPages',
-                        name: 'designPages',
-                        component: () => import('@/pages/children/childrens/design-pages.vue'),
-                        meta: {
-                            isAuth: true
-                        },
-                    },
-                    {
-                        path: 'elsePages',
-                        name: 'elsePages',
-                        component: () => import('@/pages/children/childrens/else-pages.vue'),
-                        meta: {
-                            isAuth: true
-                        },
-                    },
-                    {
-                        path: 'internalPages',
-                        name: 'internalPages',
-                        component: () => import('@/pages/children/childrens/internal-pages.vue'),
-                        meta: {
-                            isAuth: true
-                        },
-                    },
-                    {
-                        path: 'managementPages',
-                        name: 'managementPages',
-                        component: () => import('@/pages/children/childrens/management-pages.vue'),
-                        meta: {
-                            isAuth: true
-                        },
-                    },
-                    {
-                        path: 'mannagerPages',
-                        name: 'mannagerPages',
-                        component: () => import('@/pages/children/childrens/mannager-pages'),
-                        meta: {
-                            isAuth: true
-                        },
-                    },
-                    {
-                        path: 'qualityPages',
-                        name: 'qualityPages',
-                        component: () => import('@/pages/children/childrens/quality-pages.vue'),
-                        meta: {
-                            isAuth: true
-                        },
-                    },
-                    {
-                        path: 'sparePages',
-                        name: 'sparePages',
-                        component: () => import('@/pages/children/childrens/spare-pages.vue'),
-                        meta: {
-                            isAuth: true
-                        },
-                    },
-                    {
-                        path: 'technologyPages',
-                        name: 'technologyPages',
-                        component: () => import('@/pages/children/childrens/technology-pages.vue'),
-                        meta: {
-                            isAuth: true
-                        },
-                    }
-                ]
-            }
-        ]
     },
 
     {
         path: '/symbolPages',
         name: 'symbolPages',
-        component: () => import('@/pages/symbol-pages.vue'),
+        component: () => import('@/pages/manager/user/symbol-pages.vue'),
         meta: {
             isAuth: true
         },
@@ -127,7 +34,7 @@ const routes = [
     {
         path: '/imporantPages',
         name: 'imporantPages',
-        component: () => import('@/pages/important-pages.vue'),
+        component: () => import('@/pages/manager/Administrator/important-pages.vue'),
         meta: {
             isAuth: true
         },
@@ -136,7 +43,7 @@ const routes = [
     {
         path:'/addSingleClassPages',
         name:'addclassPages',
-        component:()=>import('@/pages/addSingleClass-pages.vue'),
+        component:()=>import('@/pages/manager/course/addSingleClass-pages.vue'),
         meta:{
          isAuth:true
         }
@@ -145,7 +52,7 @@ const routes = [
      {
         path:'/addMoreClassPages',
         name:'addMoreClassPages',
-        component:()=>import('@/pages/addMoreClass-pages.vue'),
+        component:()=>import('@/pages/manager/course/addMoreClass-pages.vue'),
         meta:{
          isAuth:true
         }
@@ -154,19 +61,12 @@ const routes = [
      {
       path:'/redactPages',
       name:'redactPages',
-      component:()=>import('@/pages/redact-pages.vue')
+      component:()=>import('@/pages/manager/Administrator/redact-pages.vue')
      },
-    //退出登录
-    {
-        path: '/studyPages',
-        name: 'styduPages',
-        component: () => import('@/pages/study-pages.vue'),
-        redirect: '/loginPages'
-    },
     {
         path: '/broadPages',
         name: 'broadPages',
-        component: () => import('@/pages/broad-pages.vue'),
+        component: () => import('@/pages/videoPlay/broad-pages.vue'),
         meta: {
             isAuth: true
         },
@@ -174,14 +74,14 @@ const routes = [
     {
       path:'/recordLearning',
       name:'recordLearning',
-      component:()=>import('@/pages/recordLearning-pages.vue'),
+      component:()=>import('@/pages/manager/Administrator/recordLearning-pages.vue'),
       meta:{
         isAuth: true
       }
     },
     {
         path: '*',
-        component: () => import('@/pages/notFound-pages.vue'),
+        component: () => import('@/pages/notFound/notFound-pages.vue'),
     }
 ]
 
@@ -194,15 +94,16 @@ const router = new VueRouter({
 // console.log(localStorage.getItem("token"))
 // let token = localStorage.getItem('token')  
 router.beforeEach((to, from, next) => {
+    let token = sessionStorage.getItem("token")
     if (to.meta.isAuth) {
-        if (sessionStorage.getItem("token")) {
+        if (token) {
             next()
             // sessionStorage.removeItem("token")
         } else {
-            alert("请输入正确的账户或密码后在进行查看")
+            Message.error('请输入账号或密码后在进行查看')
             next('/loginPages')
         }
-    } else {
+    }else {
         next()
     }
 

@@ -19,53 +19,53 @@
             <i class="iconfont"></i>
           </div>
           <!-- 弹出层大盒子 -->
-          <div class="fade" v-show="shade" @mouseleave="leFn">
+          <div class="fade" v-show="shading" @mouseleave="leFn">
             <!-- 里面分栏，子路由在这里，点击变换的是下面内容区域，分别接收不同的数据 -->
             <!-- 弹出层中小盒子布局 -->
             <div class="smallBox">
               <router-link to="/onlinePages/mannagerPages" class="clear">
                 <!-- 产品经理 -->
-                <div class="manager public">{{list[1]}}</div>
+                <div class="manager public">{{lists[1]}}</div>
               </router-link>
 
               <router-link to="/onlinePages/technologyPages" class="clear">
                 <!-- 技术开发 -->
-                <div class="technology public">{{list[2]}}</div>
+                <div class="technology public">{{lists[2]}}</div>
               </router-link>
 
               <router-link to="/onlinePages/sparePages" class="clear">
                 <!-- 运营推广 -->
-                <div class="spare public">{{list[3]}}</div>
+                <div class="spare public">{{lists[3]}}</div>
               </router-link>
 
               <router-link to="/onlinePages/internalPages" class="clear">
                 <!-- 内部讲堂 -->
-                <div class="internal public">{{list[4]}}</div>
+                <div class="internal public">{{lists[4]}}</div>
               </router-link>
 
               <router-link to="/onlinePages/qualityPages" class="clear">
                 <!-- 职场通用素质 -->
-                <div class="quality public">{{list[5]}}</div>
+                <div class="quality public">{{lists[5]}}</div>
               </router-link>
 
               <router-link to="/onlinePages/designPages" class="clear">
                 <!-- 产品与设计 -->
-                <div class="design public">{{list[6]}}</div>
+                <div class="design public">{{lists[6]}}</div>
               </router-link>
 
               <router-link to="/onlinePages/managementPages" class="clear">
                 <!-- 管理与领导力 -->
-                <div class="management public">{{list[7]}}</div>
+                <div class="management public">{{lists[7]}}</div>
               </router-link>
 
               <router-link to="/onlinePages/analysisPages" class="clear">
                 <!-- 数据分析 -->
-                <div class="analysis public">{{list[8]}}</div>
+                <div class="analysis public">{{lists[8]}}</div>
               </router-link>
 
               <router-link to="/onlinePages/elsePages" class="clear">
                 <!-- 其他 -->
-                <div class="else public">{{list[100]}}</div>
+                <div class="else public">{{lists[100]}}</div>
               </router-link>
             </div>
           </div>
@@ -95,9 +95,9 @@
 export default {
   data() {
     return {
-      shade: false,
+      shading: false,
       clean: false,
-      list:[]
+      lists:[]
     };
   },
   mounted(){
@@ -107,10 +107,10 @@ export default {
   },
   methods: {
     focuFn() {
-      this.shade = true;
+      this.shading = true;
     },
     leFn() {
-      this.shade = false;
+      this.shading = false;
     },
     into() {
       this.clean = true;
@@ -122,7 +122,7 @@ export default {
       this.Authenticator = sessionStorage.getItem('token')
       // console.log(this.Authenticator)
       this.$http.get('/home/course/cate').then((res)=>{
-        this.list = res.data.data.list
+        this.lists = res.data.data.list
         // console.log(this.list)
         console.log(this.list,87678)
       }).catch((err)=>{

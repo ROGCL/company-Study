@@ -12,14 +12,30 @@
         <el-upload
           class="upload-demo"
           drag
-          action="https://jsonplaceholder.typicode.com/posts/"
+          action="http://172.168.11.229:9000/file/upload"
+          :show-file-list="false"
+          :before-upload="beforeUploadImg"
+          :on-success="uploadImgSuccess"
+          :headers="headersData"
+          v-if="list.course_cover_url == ''"
         >
           <i class="el-icon-upload"></i>
           <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
         </el-upload>
+        <img
+          :src="'http://172.168.11.229:9000' + list.course_cover_url"
+          alt=""
+          class="img-cover"
+          v-else
+        />
       </div>
       <!-- 下方文字描述区域 -->
       <h5>推荐图片尺寸 300*170px大小＜30M格式推荐 png、jpg</h5>
+      <div class="upload-img-replace" @click="changeImgSource">
+          <button v-show="list.course_cover_url">
+            <span class="font icon-public"></span>更改
+          </button>
+        </div>
       <!-- 文本域 -->
       <div class="textarea">
         <span class="point-public"></span>
@@ -30,13 +46,14 @@
           cols="30"
           rows="10"
           maxlength="40"
+          v-model="list.title"
         ></textarea>
       </div>
       <!-- 类目选择 -->
       <div class="select-class select-public">
         <span class="point-public"></span>
         类目选择
-        <el-select v-model="value1" placeholder="请选择" class="el-select">
+        <el-select v-model="list.cate" placeholder="请选择" class="el-select">
           <el-option
             v-for="item in options1"
             :key="item.value"
@@ -50,7 +67,7 @@
       <div class="select-introduce select-public">
         <span class="point-public"></span>
         推荐位选择
-        <el-select v-model="value2" placeholder="请选择" class="el-select">
+        <el-select v-model="list.posid" placeholder="请选择" class="el-select">
           <el-option
             v-for="item in options2"
             :key="item.value"
@@ -62,15 +79,15 @@
       </div>
       <!-- 取消和保存按钮 -->
       <div class="del-save-btn">
-        <el-button>取消</el-button>
-        <el-button>保存</el-button>
+        <el-button @click="backCourse">取消</el-button>
+        <el-button @click="submitCourse">保存</el-button>
       </div>
     </div>
     <!-- 上传章节栏，默认只显示一个窗口，点击底部新增在进行添加 -->
     <div class="vh-big-box">
-    <div class="chapter-upload">
+    <div class="chapter-upload" v-for="(item,index) in courseData" :key="index">
       <!-- 标题第几节 -->
-      <h5>第一节</h5>
+      <h5>第{{index + 1}}节</h5>
       <!-- 上传视频资源 -->
       <div class="upload-video">
         <span class="point-public"></span>
@@ -79,30 +96,43 @@
       <!-- 视频背景栏，可以进行预览 -->
       <div class="video-banner">
         <el-upload
+        v-loading="loading"
           class="upload-demo"
           drag
-          action="https://jsonplaceholder.typicode.com/posts/"
+          action="http://172.168.11.229:9000/file/upload"
+          :before-upload="file=>beforeUploadVideo(file,index)"
+            :on-success="uploadVideoSuccess"
+            :on-progress="uploadVideoProcess"
+            :headers="headersData"
+            :show-file-list="false"
+          v-if="item.video_url == ''"
         >
           <i class="el-icon-upload"></i>
           <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
         </el-upload>
+        <video
+            :src="'http://172.168.11.229:9000' + item.video_url"
+            style="width: 360px; height: 180px"
+            controls
+            v-else
+          ></video>
       </div>
       <!-- 描述文字 -->
-      <h6>只能上传mp4、avi格式</h6>
+      <!-- <h6>只能上传mp4、avi格式</h6> -->
       <!-- 路径 -->
-      <div class="video-path"></div>
+      <!-- <div class="video-path"></div> -->
       <!-- 上传按钮，在上传文件后变为替换按钮 -->
-      <div class="upload-replace">
-        <button><span class="font icon-public"></span>上传</button>
+      <div class="upload-replace" v-show="item.video_url !== ''">
+        <button @click="changeSource(item)"><span class="font icon-public"></span>更改</button>
       </div>
       <!-- 文本域 -->
       <div class="textarea1">
         <span class="point-public"></span>
         标题
-        <textarea name="" id="input-area1" cols="30" rows="10"></textarea>
+        <textarea name="" id="input-area1" cols="30" rows="10" v-model="item.video_title"></textarea>
       </div>
       <!-- 删除按钮 -->
-      <div class="delete-btn">
+      <div class="delete-btn" @click="removeList(index)" v-show="item.video_title !== '' || item.video_url !== ''">
         <button><span class="icon icon-public"></span>删除</button>
       </div>
     </div>
@@ -120,8 +150,10 @@
 
 <script>
 export default {
+// props:['courseData'],
     data() {
     return {
+      currentIdx:0,
       options1: [
         {
           value: "产品经理",
@@ -164,21 +196,168 @@ export default {
       //推荐位
       options2: [
         {
-          value: "精品课程",
-          label: "精品课程",
-        },
-        {
-          value: "其他推位",
-          label: "其他推位",
-        },
+          value: "首页精品推荐位",
+          label: "首页精品推荐位",
+        }
       ],
-      value2: ""
+      value2: "",
+      list:{},
+      courseData:[],
+      loading:false
     };
   },
+  computed: {
+    //带上请求头用户的token，不然不生效果
+    headersData() {
+      let loginToken = sessionStorage.getItem("token");
+      if (loginToken) {
+        // 跳转登录
+        return {
+          Authenticator: loginToken,
+        };
+      }
+      return false;
+    },
+  },
+  mounted(){
+    this.getListSource()  //请求回传的视频资源
+        //接收返回来的数据
+        this.list = this.$route.query.form
+    console.log(this.list,'表单内容1')
+
+  },
   methods:{
+    getListSource(){
+      this.$http.post('/course/edit',{
+        id:this.$route.query.id
+      }).then((res)=>{
+        let data = res.data.data
+        this.courseData = data.series
+        console.log(this.courseData,'courseData')
+      })
+    },
+    //取消回退界面
+    backCourse(){
+      this.$router.back()
+    },
+    //保存提交更新后的表单
+    submitCourse(){
+      console.log(this.list,'列表数据')
+      this.$http.post('/course/update',{
+        id:this.list.id,
+        course_cover_url:this.list.course_cover_url,
+        attribute:2,
+        cate:this.list.cate,
+        title:this.list.title,
+        posid:this.list.posid,
+        series:this.courseData
+      }).then((res)=>{
+        console.log(res.data)
+        if(res.data.code == 1){
+          this.$router.back()
+        }
+      })
+    },
     addUpload(){
-        alert(11111)
-    }
+     let obj = {
+      blues_sort:"",
+      // id:"",
+      video_duration:"",
+      video_file_name:"",
+      video_title:"",
+      video_url:""
+     }
+     this.courseData.push(obj)
+     console.log(this.courseData)
+       // alert(11111)
+    },
+    //删除按钮进行的操作
+    removeList(ind){
+      this.courseData.splice(ind,1)
+      
+    },
+    changeSource(item){
+      console.log(item)
+      item.video_url = ''
+    },
+    changeImgSource(){
+      this.list.course_cover_url = ""
+    },
+     //上传封面之前的判断
+     beforeUploadImg(file) {
+      this.loadingstate = true;
+      let index = file.name.lastIndexOf(".");
+      let extension = file.name.substr(index + 1);
+      let extensionList = [
+        "png",
+        "PNG",
+        "jpg",
+        "JPG",
+        "jpeg",
+        "JPEG",
+        "bmp",
+        "BMP",
+      ];
+      let isLt2M = file.size / 1024 / 1024 < 10;
+      if (!isLt2M) {
+        this.$message({
+          message: "封面不能超出10M",
+          type: "warning",
+          center: true,
+        });
+
+        return false;
+      } else if (extensionList.indexOf(extension) < 0) {
+        this.$message({
+          message: "当前文件格式不支持",
+          type: "error",
+          center: true,
+        });
+
+        return false;
+      }
+    },
+    uploadImgSuccess(res, file) {
+      console.log(res, "imgRes");
+      console.log(file, "file");
+      this.list.course_cover_url = res.data.url;
+    },
+    //上传视频前的校验
+    beforeUploadVideo(file,idx) {
+      console.log('%caddMoreClass-pages.vue line:322 index', 'color: #007acc;', idx);
+      this.currentIdx = idx
+      this.loadingstate = true;
+      let index = file.name.lastIndexOf(".");
+      let extension = file.name.substr(index + 1);
+      let extensionList = ["mp4"];
+      if (extensionList.indexOf(extension) < 0) {
+        this.$message.error("上传视频的格式应该为mp4格式");
+        return false;
+      }
+    },
+    //视频上传过程中的加载操作
+    uploadVideoProcess(event, file, formList) {
+      console.log(event, "视频上传中1");
+      console.log(file, "视频上传中2");
+      console.log(formList, "视频上传中3");
+      console.log(file.status, "视频上传中response");
+      this.loading = true;
+    },
+    //视频上传成功
+    uploadVideoSuccess(res, file) {
+      console.log(res, "视频上传成功");
+      console.log(file);
+      let obj = {
+        blues_sort: this.currentIdx,
+        video_url: file.response.data.url,
+        // video_title: file.name,
+        video_duration: file.response.data.time_log,
+        video_file_name: file.response.data.name,
+      };
+      this.courseData[this.currentIdx] = obj
+      this.loading = false
+      console.log(this.courseData)
+    },
   }
 }
 </script>
@@ -205,7 +384,8 @@ export default {
   margin-left: 706px;
   margin-top: 56px;
   width: 591px;
-  /* height: 100vh; */
+  /* height: 600px; */
+  height: 100vh;
   overflow-x: hidden;
   overflow-y: scroll;
 }
@@ -223,8 +403,8 @@ export default {
 }
 .chapter-upload1{
   position: relative;
-  margin-left: 706px;
-  margin-top: 16px;
+  margin-left: 1312px;
+  margin-top: -930px;
   width: 591px;
   height: 514px;
   background: #fff;
@@ -458,6 +638,25 @@ export default {
   background: #2ab18b;
   color: #fff;
 }
+.img-cover {
+  width: 100%;
+  height: 100%;
+  margin-top: 8px;
+  border-radius: 4px;
+}
+.upload-img-replace{
+  position: absolute;
+  left: 190px;
+  top: 297px;
+}
+.upload-img-replace button{
+  width: 82px;
+  height: 32px;
+  background: #fff;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  cursor: pointer;
+}
 </style>
 <style>
 * {
@@ -468,10 +667,10 @@ export default {
 body {
   background: #f0f2f5;
 }
-.video-banner .el-upload-dragger {
+/* .video-banner .el-upload-dragger {
   width: 360px;
   height: 135px;
-}
+} */
 .el-upload-list--text{
   margin-top: 42px;
 }
