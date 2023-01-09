@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- 头部和侧边栏共用 -->
-  <controlComponents></controlComponents>
+  <controlComponents :manageActive="2"></controlComponents>
   <!-- 面包屑 -->
   <div class="ham">
       <el-breadcrumb separator="/">
@@ -16,12 +16,12 @@
      <!-- 姓名/账号输入框 -->
     <div class="name-username input-selsect-public">
         姓名/账号
-        <input type="text" v-model="account" class="input-public" placeholder="请输入姓名/账号"/>
+        <el-input type="text" v-model="user" placeholder="请输入姓名/账号" size="medium" style="margin-top: 8px;"></el-input>
     </div>
     <!-- 用户ID/插件ID -->
     <div class="user-ID input-selsect-public">
         用户ID/插件ID
-        <input type="text" v-model="plugin" class="input-public" placeholder="请输入用户ID/插件ID"/>
+        <el-input type="text" v-model="user_id" placeholder="请输入用户ID/插件ID" size="medium" style="margin-top: 8px;"></el-input>
     </div>
     <!-- 发起时间 -->
     <div class="send-time input-selsect-public">
@@ -46,7 +46,7 @@
     </div>
   </div>
   <!-- 下方列表展示区域 -->
-  <div class="bottom-list">
+  <div class="bottom-list" v-loading="loading">
     <!-- 固定栏+展示栏大盒子 -->
     <div class="bottom-list-inner-box">
     <!-- 上部固定栏 -->
@@ -79,9 +79,6 @@
           <!-- 发起时间 -->
           <div class="top-send-time top-public">{{item.add_time}}</div>
           <!-- 处理结果 -->
-          <!-- <div class="top-result top-public" v-if="item.status == 1">审核中</div>
-          <div class="top-result top-public" v-else-if="item.status == 2">未通过</div>
-          <div class="top-result top-public" v-else>通过</div> -->
           <div class="operation top-public" style="display:flex;justify-content: space-evenly;">
             <div style="cursor: pointer;color: #409EFF;" class="agreeConfirm" @click="agree(item.id)">同意授权</div>
             <div style="cursor: pointer;color: #409EFF;" class="refuseConfirm" @click="reference(item.id)">拒绝授权</div>
@@ -119,7 +116,7 @@
 </template>
 
 <script>
-import controlComponents from '@/components/control-components.vue'
+import controlComponents from '@/components/control/control-components.vue'
 export default {
 components:{controlComponents},
 data(){
@@ -134,7 +131,10 @@ data(){
        page:1,
        page_size:8,
        list:[],
-       total:"",
+       total:0,
+       authorizationid:0, //表格中每条数据的id
+       operation:"", //发送操作请求的字段
+       loading:false
     }
 },
 mounted(){
@@ -148,20 +148,9 @@ methods:{
     handleSizeChange(val) {
         console.log(`每页 ${val} 条`);
       },
-      //根据分页再次进行请求，分页后的数据
-      handleCurrentChange() {
-        this.$http.post('/authorization/list',{
-            user:this.user,
-            user_id:this.user_id,
-            status:this.status,
-            time_add:this.time_add,
-            page:this.page,
-            page_size:this.page_size
-        }).then((res)=>{
-            this.list = res.data.data.list
-        })
-      },
+
       getlist(){
+        this.loading = true
         this.$http.post('/authorization/list',{
             user:this.user,
             user_id:this.user_id,
@@ -170,94 +159,59 @@ methods:{
             page:this.page,
             page_size:this.page_size
         }).then((res)=>{
+            setTimeout(()=>{
+            this.loading = false
+          },500)
             this.list = res.data.data.list
             this.total = res.data.data.total
-            console.log(this.list)
         })
+      },
+      //根据分页再次进行请求，分页后的数据
+      handleCurrentChange() {
+         this.getlist()
       },
     //搜索再发一次请求并渲染数据到页面上
       searchList(){
-        if(this.account == '' || this.plugin == ''){
+        if(this.user == '' || this.user_id == ''){
             this.$message.error('请填写姓名或账号后进行搜索')
             return
         }
-        this.$http.post('/authorization/list',{
-            page:this.page,
-            page_size:this.page_size,
-            user_id:this.account,
-            user:this.account,
-            status:this.status
-        }).then((res)=>{
-            this.list = res.data.data.list
-            console.log(res.data.data.list,989898)
-            if(this.list !== null){
-                this.account = ''
-                this.plugin = ''
-            }
-        })
+        this.getlist()
+        this.user = ''
+        this.user_id = ''
       },
       //未处理
       notHandled(){
-        this.$http.post('/authorization/list',{
-            page:this.page,
-            page_size:this.page_size,
-            status:1
-        }).then(res=>{
-            this.total = res.data.data.total
-            this.list = res.data.data.list
-        })
+        this.status = 1
+        this.getlist()
       },
       //处理
       handled(){
-        this.$http.post('/authorization/list',{
-            page:this.page,
-            page_size:this.page_size,
-            status:3
-        }).then(res=>{
-            console.log(res.data)
-            this.total = res.data.data.total
-            this.list = res.data.data.list
-        })
+        this.status = 3
+        this.getlist()
+      },
+     authorization(){
+       this.$http.post('/authorization/audit',{
+            id:this.authorizationid,
+            operation:this.operation
+         }).then((res)=>{
+         if(res.data.message == 'success'){
+            this.getlist()
+         }else{
+            this.$message.info('操作无效,请稍后在尝试')
+         }
+         })
       },
       agree(id){
-console.log(id,'同意')
-this.$http.post('/authorization/audit',{
-    id,
-    operation:'on'
-}).then((res)=>{
-    console.log(res.data)
-    if(res.data.message == 'success'){
-        this.getlist()
-    }
-})
+        this.authorizationid = id
+        this.operation = "on"
+        this.authorization()
       },
       reference(id){
-console.log(id,'拒绝')
-this.$http.post('/authorization/audit',{
-    id,
-    operation:'off'
-}).then((res)=>{
-    console.log(res)
-    if(res.data.message == 'success'){
-        this.getlist()
-    }
-})
+        this.authorizationid = id
+        this.operation = "off"
+        this.authorization()
       }
-    //   changeTime(){
-    //     if(this.value1.length !== 0){
-    //     for(let i = 0;i< this.value1.length;i++){
-    //   let date = this.value1[i];
-    //   let year = date.getFullYear();
-    //   let month = date.getMonth() + 1;
-    //   let day = date.getDate()
-    //   month = month > 9 ? month : "0" + month;
-    //   day = day > 9 ? day : "0" + day
-    //   let days = year+"-"+month+"-"+day
-    //   this.Time = days
-    //   console.log(this.Time)
-    //     }
-    // }
-    //   }
 }
 }
 </script>

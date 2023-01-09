@@ -1,5 +1,5 @@
 <template>
-  <div class="window">
+  <div id="app">
     <!-- 顶部提示栏,弹窗,所有页面共用,挂载到主页面 -->
     <div class="topNotice" v-show="shade">
       <img src="@/assets/img/17.png" alt="" id="lit" />
@@ -7,94 +7,152 @@
       <img src="@/assets/img/18.png" alt="" id="del" @click="close" />
     </div>
     <!-- 头部组件 -->
-        <!-- 外层大盒子 -->
-        <div class="line">
+    <!-- 外层大盒子 -->
+    <div class="line">
       <!-- 内部盒子，版心1200px -->
       <div class="heart">
-        <router-link to="/homePages">
-          <div class="icon"></div>
-        </router-link>
+        <div class="icon"></div>
         <!-- 选择框，此处需要用到路由，配置子路由 -->
         <div class="choose">
           <!-- 首页 -->
-            <div class="index" @click="getData">首页</div>
+          <div class="index" @click="getDataList">首页</div>
           <!-- 在线课程 -->
           <div class="inline" @mouseenter="focuFn">
             在线课程
             <i class="el-icon-arrow-down" v-if="arrow == 1"></i>
             <i class="el-icon-arrow-up" v-else></i>
-            <!-- <i class="iconfont"></i> -->
           </div>
           <!-- 弹出层大盒子 -->
           <div class="fade" v-show="shading" @mouseleave="leFn">
             <!-- 里面分栏，子路由在这里，点击变换的是下面内容区域，分别接收不同的数据 -->
             <!-- 弹出层中小盒子布局 -->
             <div class="smallBox">
-              <div class="public" v-for="(val,index) in lists" :key="index" @click="chooseCate(index,val)">{{val}}</div>
+              <div
+                class="public"
+                v-for="(val, index) in lists"
+                :key="index"
+                :class="{ selectedActive: selectedActive == index ? 1 : 0 }"
+                @click="chooseCate(index, val)"
+              >
+                {{ val }}
+              </div>
             </div>
           </div>
         </div>
         <!-- 搜索框 -->
         <div class="search">
-          <!-- <input type="text" id="searchForm" placeholder="输入搜索教程" /> -->
-          <el-input v-model="search" placeholder="输入搜索教程" id="searchForm" ></el-input>
-          <img src="@/assets/img/10.png" alt="" class="font" @click="searchFormList">
+          <el-input
+            v-model="search"
+            placeholder="输入搜索教程"
+            id="searchForm"
+            @keyup.enter.native="searchFormList"
+          ></el-input>
+          <img
+            src="@/assets/img/10.png"
+            alt=""
+            class="font"
+            @click="searchFormList"
+          />
           <!-- 头像框 -->
-          <el-dropdown style="display:flex;margin-left: 40px;">
-      <img src="@/assets/img/13.png" alt="" class="user_img" />
-      <el-dropdown-menu slot="dropdown" style="text-align:center">
-        <el-dropdown-item @click.native="goStudyList">个人学习记录</el-dropdown-item>
-        <el-dropdown-item @click.native="leaveHome">退出登录</el-dropdown-item>
-      </el-dropdown-menu>
-    </el-dropdown>
+          <el-dropdown style="display: flex; margin-left: 40px">
+            <img src="@/assets/img/13.png" alt="" class="user_img" />
+            <el-dropdown-menu slot="dropdown" style="text-align: center">
+              <el-dropdown-item @click.native="goStudyList"
+                >个人学习记录</el-dropdown-item
+              >
+              <el-dropdown-item @click.native="leaveHome"
+                >退出登录</el-dropdown-item
+              >
+            </el-dropdown-menu>
+          </el-dropdown>
         </div>
       </div>
       <div class="img"></div>
     </div>
-    <!-- 内容组件 -->
-    <div class="container">
-      <!-- 后端反数据 4栏布局保持不变更 -->
-      <!-- 头部通栏 -->
-      <div class="contop">
-        <!-- 左边标题 -->
-        <h4 ref="changeCourse">精品课程</h4>
-        <!-- 右侧图标 -->
-        <div class="smBox">
-          <div class="sm-control-box">
-            <span>最新</span>
-            <i class="el-icon-caret-top position-change" @click="searchNewList" ref="iconChangeColor"></i>
-            <i class="el-icon-caret-bottom change-position" @click="searchAfterList" ref="iconColorChange"></i>
-          </div>
-          <div class="sm-control-box">
-            <span>最热</span>
-            <i class="el-icon-caret-top position-change" ref="iconStyle" @click="searchHotList"></i>
-            <i class="el-icon-caret-bottom change-position" @click="searchHotListAfter" ref="styleIcon"></i>
-          </div>
-          <div class="sm-control-box">
-            <el-dropdown style="display:flex;" placement="top-end">
-            <span class="three" ref="dropTotal">全部<i class="el-icon-caret-bottom
-"></i></span>
-      <el-dropdown-menu slot="dropdown" style="text-align:center">
-        <el-dropdown-item @click.native="getData">全部</el-dropdown-item>
-        <el-dropdown-item @click.native="searchSingleList">单节课</el-dropdown-item>
-        <el-dropdown-item @click.native="searchMoreList">系列课</el-dropdown-item>
-      </el-dropdown-menu>
-    </el-dropdown>
+    <div
+      style="width: 100%; min-height: 600px"
+      v-loading="fullscreenLoading"
+      element-loading-text="正在加载中..."
+      element-loading-background="#f0f2f5"
+    >
+      <!-- 内容组件 -->
+      <div class="container">
+        <!-- 后端反数据 4栏布局保持不变更 -->
+        <!-- 头部通栏 -->
+        <div class="contop">
+          <!-- 左边标题 -->
+          <h4 ref="changeCourse">精品课程</h4>
+          <!-- 右侧图标 -->
+          <div class="smBox">
+            <div class="sm-control-box">
+              <span>最新</span>
+              <i
+                class="el-icon-caret-top position-change"
+                @click="searchNewList"
+                ref="iconChangeColor"
+              ></i>
+              <i
+                class="el-icon-caret-bottom change-position"
+                @click="searchAfterList"
+                ref="iconColorChange"
+              ></i>
+            </div>
+            <div class="sm-control-box">
+              <span>最热</span>
+              <i
+                class="el-icon-caret-top position-change"
+                ref="iconStyle"
+                @click="searchHotList"
+              ></i>
+              <i
+                class="el-icon-caret-bottom change-position"
+                @click="searchHotListAfter"
+                ref="styleIcon"
+              ></i>
+            </div>
+            <div class="sm-control-box">
+              <el-dropdown style="display: flex" placement="top-end">
+                <span class="three" ref="dropTotal" v-if="attr == '1'"
+                  >单节课 <i class="el-icon-caret-bottom"></i
+                ></span>
+                <span class="three" ref="dropTotal" v-else-if="attr == '2'"
+                  >系列课 <i class="el-icon-caret-bottom"></i
+                ></span>
+                <span class="three" ref="dropTotal" v-else
+                  >全部 <i class="el-icon-caret-bottom"></i
+                ></span>
+
+                <el-dropdown-menu slot="dropdown" style="text-align: center">
+                  <el-dropdown-item @click.native="getData"
+                    >全部</el-dropdown-item
+                  >
+                  <el-dropdown-item @click.native="searchSingleList"
+                    >单节课</el-dropdown-item
+                  >
+                  <el-dropdown-item @click.native="searchMoreList"
+                    >系列课</el-dropdown-item
+                  >
+                </el-dropdown-menu>
+              </el-dropdown>
+            </div>
           </div>
         </div>
-      </div>
-      <!-- 底部4栏布局 -->
-      <!-- 外部大盒子 -->
-      <!-- 在这里传入点击进去的id后获得视频url和视频标题 -->
+        <!-- 底部4栏布局 -->
+        <!-- 外部大盒子 -->
+        <el-empty description="暂无内容" v-show="list == null"></el-empty>
+        <!-- 在这里传入点击进去的id后获得视频url和视频标题 -->
         <div class="sch">
           <!-- 内部的一个盒子 -->
-          <div v-for="(item, index) in list" :key="index" @click="pushSource(item.id)">
-
+          <div
+            v-for="(item, index) in list"
+            :key="index"
+            @click="pushSource(item.id, 'identification')"
+          >
             <div class="into pa">
               <!-- 课程图片 -->
               <div class="jpg">
                 <img
-                  :src="'http://172.168.11.229:9000' + item.course_cover_url"
+                  :src="processUrl + item.course_cover_url"
                   alt=""
                   class="img9"
                 />
@@ -112,258 +170,216 @@
             </div>
           </div>
         </div>
+      </div>
     </div>
-    <el-empty description="暂无内容" v-show="list == null"></el-empty>
-      <!-- 回到顶部按钮 -->
-      <el-backtop target=".window">abc</el-backtop>
-      <!-- <bannerComponents></bannerComponents> -->
     <router-view></router-view>
   </div>
 </template>
 
 <script>
-
 export default {
   data() {
     return {
       shade: true,
       list: [],
-      Attr: "",
+      attr: "",
       order: "",
       page: 1,
       page_size: 16,
       posid: 1,
       prop: "",
-      cate:"0",
-      total:"",
-      id:[],
+      cate: 0,
+      total: "",
+      id: [],
       shading: false,
       clean: false,
-      lists:[],
-      arrow:1, //在线课程旁边的icon图标
-      search:""
+      lists: {}, //课程分类数据
+      arrow: 1, //在线课程旁边的icon图标
+      search: "",
+      selectedActive: 0, //下拉菜单高亮控制
+      processUrl: process.env.VUE_APP_URL,
+      fullscreenLoading: false, //加载
+      searchResult:0, // 搜索显隐字段
     };
   },
-  // created(){
-  //   this.$router.go(0)
-  // },
-  mounted(){
-   this.getData()
-   this.init()
-   this.reload()
+  mounted() {
+    this.getData(); //获取课程信息
+    this.lists = JSON.parse(localStorage.getItem("courseCate"));
   },
   methods: {
+    //关闭通知栏
     close() {
       this.shade = false;
     },
-    //进入页面刷新的方法,以避免数据加载未完成的情况
-    reload(){
-      if (location.href.indexOf("#reloaded") == -1) {
-        location.href = location.href + "#reloaded";
-        location.reload();
-    }
+    //点击首页，再次请求数据
+    getDataList() {
+      this.$refs.changeCourse.innerHTML = "精品课程";
+      this.cate = 0;
+      this.getData();
+      this.selectedActive = 0;
     },
     // 打开页面时请求的数据
     async getData() {
+      this.fullscreenLoading = true;
       const res = await this.$http.post("/home/index", {
-        Attr: this.Attr,
+        attr: this.attr,
         order: this.order,
         page: this.page,
         page_size: this.page_size,
         posid: this.posid,
         prop: this.prop,
-        cate:this.cate 
+        cate: this.cate,
+        search: this.search,
       });
       this.list = res.data.data.list;
-      // this.total = res.data.data.list.total
-      this.$refs.dropTotal.innerHTML = `<span class="three">全部<i class="el-icon-caret-bottom
-"></i></span>`
-this.$refs.changeCourse.innerHTML = '全部课程'
-      // console.log(this.list.length,99999)
-      this.scroll();
-      console.log(this.list,8767);
+      setTimeout(() => {
+        this.fullscreenLoading = false;
+      }, 1000);
+
+      // console.log(res.data.data);
+      this.total = res.data.data.list.total;
+      if (this.search !== "") {
+        this.search = "";
+        this.$refs.changeCourse.innerHTML = "搜索结果";
+      }
+      if (this.prop == "time_add" && this.order == "asc") {
+        this.$refs.iconColorChange.classList.remove("iconColor");
+        this.$refs.iconChangeColor.classList.add("iconColor");
+      } else if (this.prop == "time_add" && this.order == "desc") {
+        this.$refs.iconChangeColor.classList.remove("iconColor");
+        this.$refs.iconColorChange.classList.add("iconColor");
+      }
+
+      if (this.prop == "course_pv" && this.order == "asc") {
+        this.$refs.styleIcon.classList.remove("iconColor");
+        this.$refs.iconStyle.classList.add("iconColor");
+      } else if (this.prop == "course_pv" && this.order == "desc") {
+        this.$refs.styleIcon.classList.add("iconColor");
+        this.$refs.iconStyle.classList.remove("iconColor");
+      }
     },
     //页面滚动时，利用分页功能，循环发送请求加载的页面
-    scroll() {
-      let isLoading = false;
-      window.onscroll = async () => {
-        //offsetHeight:可视区域的高度，包含了border和滚动条
-        //scrollTop:滚动后被隐藏的高度,获取对象相对于由offsetHeight属性指定的父坐标距离顶端的高度
-        //innerHeight:文档显示区域的高度
-        let bottomOfWindow =
-          document.documentElement.offsetHeight -
-            document.documentElement.scrollTop -
-            window.innerHeight <=
-          10;
-        if (bottomOfWindow && isLoading == false) {
-          // this.page = this.page + 1;
-          const res = await this.$http.post("/home/index", {             
-            Attr: this.Attr,
-            order: this.order,
-            page: this.page=this.page+1,
-            page_size: this.page_size,
-            posid: this.posid,
-            prop: this.prop,
-            cate:this.cate });
-            console.log(res.data.data.list.length,878788888)
-          const length = res.data.data.list.length
-          if (length > 10) {
-            this.list.push(...res.data.data.list);
-            isLoading = true;
-            // if(res.data.data.list === null){
-            //   isLoading = false 
-            // }
-          } 
-          else {
-            this.$notify({
-              title: "温馨提示",
-              message: "暂无更多数据信息",
-              position: "bottom-right",
-            });
-            isLoading = false;
-          }
-        }
-      };
+    loadList() {
+      if (this.total <= 16) {
+        return (this.page = 1);
+      } else {
+        this.page += 1;
+        this.getData();
+      }
     },
+    // scroll() {
+    //   let isLoading = false;
+    //   window.onscroll = async () => {
+    //     //offsetHeight:可视区域的高度，包含了border和滚动条
+    //     //scrollTop:滚动后被隐藏的高度,获取对象相对于由offsetHeight属性指定的父坐标距离顶端的高度
+    //     //innerHeight:文档显示区域的高度
+    //     let bottomOfWindow =
+    //       document.documentElement.offsetHeight -
+    //         document.documentElement.scrollTop -
+    //         window.innerHeight <=
+    //       10;
+    //     if (bottomOfWindow && isLoading == false) {
+    //       const res = await this.$http.post("/home/index", {
+    //         attr: this.attr,
+    //         order: this.order,
+    //         page: this.page=this.page+1,
+    //         page_size: this.page_size,
+    //         posid: this.posid,
+    //         prop: this.prop,
+    //         cate:this.cate });
+    //         console.log(res.data.data.list.length,878788888)
+    //       const length = res.data.data.list.length
+    //       if (length > 10) {
+    //         this.list.push(...res.data.data.list);
+    //         isLoading = true;
+    //         // if(res.data.data.list === null){
+    //         //   isLoading = false
+    //         // }
+    //       }
+    //       else {
+    //         this.$notify({
+    //           title: "温馨提示",
+    //           message: "暂无更多数据信息",
+    //           position: "bottom-right",
+    //         });
+    //         isLoading = false;
+    //       }
+    //     }
+    //   };
+    // },
+    //鼠标进入在线课程展示下拉菜单
     focuFn() {
       this.shading = true;
-      this.arrow = 2
+      this.arrow = 2;
     },
+    //鼠标离开收起下拉菜单栏
     leFn() {
       this.shading = false;
-      this.arrow = 1
+      this.arrow = 1;
     },
-    into() {
-      this.clean = true;
+    // 首页在线课程下拉菜单栏的请求
+    async chooseCate(ind, val) {
+      this.cate = ind;
+      this.getData();
+      this.selectedActive = ind;
+      this.$refs.changeCourse.innerHTML = val;
     },
-    leave() {
-      this.clean = false;
+    //退出登录时做的操作，将token移除，阻止用户点击前进后再次进到主页面
+    leaveHome() {
+      sessionStorage.removeItem("token");
+      this.$router.push("/loginPages");
     },
-    init(){
-      this.Authenticator = sessionStorage.getItem('token')
-      // console.log(this.Authenticator)
-      this.$http.get('/home/course/cate').then((res)=>{
-        this.lists = res.data.data.list
-        // console.log(this.list)
-        console.log(this.lists,87678)
-      }).catch((err)=>{
-        console.log(err)
-    })
+    //跳转个人学习记录界面
+    goStudyList() {
+      this.$router.push("/symbolPages");
     },
-    async chooseCate(ind,val){
-      //后端返回的课程分类cate是对象形式,这里传入索引请求不同的数据，然后返回后进行渲染
-      const res = await this.$http.post('/home/index',{
-        page:this.page,
-        page_size:this.page_size,
-        cate:ind,
-      })
-      this.list = res.data.data.list
-      console.log(res.data.data.list,'是否获取数据')
-      this.$refs.changeCourse.innerHTML = val
+    //搜索发送请求
+    searchFormList() {
+      this.getData();
     },
-   //退出登录时做的操作，将token移除，阻止用户点击前进后再次进到主页面
-   leaveHome(){
-    this.$router.push('/loginPages')
-    sessionStorage.removeItem('token')
-    
-   },
-   goStudyList(){
-    this.$router.push('/symbolPages')
-   },
-   //搜索发送请求
-   searchFormList(){
-    this.$http.post('/home/index',{
-      page:this.page,
-      page_size:this.page_size,
-      search:this.search
-    }).then((res)=>{
-      this.search = ""
-      this.list = res.data.data.list
-      this.$refs.changeCourse.innerHTML = '搜索结果'
-      console.log(res.data,'搜索结果')
-    })
-   },
-  //下拉弹窗搜索单节课
-  searchSingleList(){
-this.$http.post('/home/index',{
-  page:this.page,
-  page_size:this.page_size,
-  attr:1
-}).then((res)=>{
-  console.log(res)
-  this.list = res.data.data.list
-  this.$refs.dropTotal.innerHTML = `<span class="three">单节课<i class="el-icon-caret-bottom
-"></i></span>`
-})
-  },
-  //下拉弹窗搜索多节课
-  searchMoreList(){
-    this.$http.post('/home/index',{
-  page:this.page,
-  page_size:this.page_size,
-  attr:2
-}).then((res)=>{
-  console.log(res)
-  this.list = res.data.data.list
-  this.$refs.dropTotal.innerHTML = `<span class="three">系列课<i class="el-icon-caret-bottom
-"></i></span>`
-})
-  },
-  // 最新
-  searchNewList(){
-     this.$http.post('/home/index',{
-      page:this.page,
-  page_size:this.page_size,
-   prop:"time_add",
-   order:"asc"
-     }).then((res)=>{
-      this.list = res.data.data.list
-      this.$refs.iconColorChange.classList.remove('iconColor')
-      this.$refs.iconChangeColor.classList.add('iconColor')
-     })
-  },
-  searchAfterList(){
-    this.$http.post('/home/index',{
-      page:this.page,
-  page_size:this.page_size,
-   prop:"time_add",
-   order:"desc"
-     }).then((res)=>{
-      this.list = res.data.data.list
-      this.$refs.iconChangeColor.classList.remove('iconColor')
-      this.$refs.iconColorChange.classList.add('iconColor')
-     })
-  },
-  //热度搜索
-  searchHotList(){
-     this.$http.post('/home/index',{
-   page:this.page,
-   page_size:this.page_size,
-   prop:"course_pv",
-   order:"asc"
-     }).then((res)=>{
-      this.list = res.data.data.list
-      this.$refs.styleIcon.classList.remove('iconColor')
-      this.$refs.iconStyle.classList.add('iconColor')
-     })
-  },
-  searchHotListAfter(){
-    this.$http.post('/home/index',{
-      page:this.page,
-  page_size:this.page_size,
-   prop:"course_pv",
-   order:"desc"
-     }).then((res)=>{
-      this.list = res.data.data.list
-      this.$refs.styleIcon.classList.add('iconColor')
-      this.$refs.iconStyle.classList.remove('iconColor')
-     })
-  },
-  pushSource(id){
-    this.$router.push({path:'/broadPages',query:{
-      course_id:id
-    }})
-  }
+    //下拉弹窗搜索单节课
+    searchSingleList() {
+      this.attr = 1;
+      this.getData();
+    },
+    //下拉弹窗搜索多节课
+    searchMoreList() {
+      this.attr = 2;
+      this.getData();
+    },
+    // 最新
+    searchNewList() {
+      this.prop = "time_add";
+      this.order = "asc";
+      this.getData();
+    },
+    searchAfterList() {
+      this.prop = "time_add";
+      this.order = "desc";
+      this.getData();
+    },
+    //热度搜索
+    searchHotList() {
+      this.prop = "course_pv";
+      this.order = "asc";
+      this.getData();
+    },
+    searchHotListAfter() {
+      this.prop = "course_pv";
+      this.order = "desc";
+      this.getData();
+    },
+    // 点击课程进入视频，并传送课程id给视频，进行处理操作
+    pushSource(id, identification) {
+      //identification标识符，传进视频播放页面后，便于区分是否进行学习上报
+      this.$router.push({
+        path: "/broadPages",
+        query: {
+          course_id: id,
+          identification,
+        },
+      });
+    },
   },
 };
 </script>
@@ -371,7 +387,6 @@ this.$http.post('/home/index',{
 <style scoped>
 .container {
   width: 1200px;
-  /* min-height: 600px; */
   margin: 0 auto;
   margin-top: 340px;
 }
@@ -389,86 +404,55 @@ this.$http.post('/home/index',{
   position: absolute;
   right: 0;
   top: 7px;
-  /* width: 246px; */
   height: 20px;
   font-size: 14px;
-  /* background: skyblue; */
   display: flex;
   justify-content: space-evenly;
 }
-.sm-control-box{
+.sm-control-box {
   position: relative;
   width: 81px;
   height: 100%;
-  /* padding-left: 20px;
-  padding-right: 20px; */
-  /* margin-left: 10px;
-  margin-right: 20px; */
   border-right: 2px solid #d8d8d8;
 }
-.sm-control-box span{
+.sm-control-box span {
   position: absolute;
   left: 20px;
   top: 0;
 }
-.three{
+.three {
   position: absolute;
   left: 0;
   top: 0;
 }
-.sm-control-box:last-child{
+.sm-control-box:last-child {
   border: none;
 }
-.position-change{
+.position-change {
   position: absolute;
   right: 5px;
   top: -1px;
   cursor: pointer;
 }
-.change-position{
+.change-position {
   position: absolute;
   right: 5px;
   bottom: -1px;
   cursor: pointer;
 }
-.three{
+.three {
   font-size: 14px;
   color: #000;
 }
-.three:hover{
-  color: #2AB18B;
+.three:hover {
+  color: #2ab18b;
 }
-/* .one {
-  position: absolute;
-  left: 0;
-  top: 0;
-  cursor: pointer;
-}
-.p-one {
-  position: absolute;
-  left: 62px;
-  top: 0;
-  color: #d8d8d8;
-}
-.p-two{
-  position: absolute;
-  left: ;
-}
-.two {
-  position: absolute;
-   left: 90px;
-  top: 0;
-  cursor: pointer;
-} */
 .sch {
   display: flex;
   flex-wrap: wrap;
   width: 100%;
+  min-height: 500px;
   margin-top: 24px;
-  /* flex-direction: row; */
-  /* background-color: pink; */
-  /* justify-content: space-evenly; */
-  /* justify-content: auto; */
 }
 .pa {
   width: 280px;
@@ -480,8 +464,7 @@ this.$http.post('/home/index',{
   transition: all 0.5s;
 }
 .pa:hover {
-  transform: translateX(8px);
-  transform: translateY(-8px);
+  transform: translateY(-12px);
   cursor: pointer;
 }
 .jpg {
@@ -517,8 +500,6 @@ this.$http.post('/home/index',{
   height: 47px;
   margin-left: 14px;
   margin-top: 14px;
-
-  /* background-color: green; */
 }
 .people {
   position: relative;
@@ -617,16 +598,16 @@ this.$http.post('/home/index',{
   background: #333131;
   cursor: pointer;
 }
-.iconfont{
-    position: absolute;
-    top: 35px;
-    right: 2px;
-    width: 12px;
-    height: 12px;
-    background-image: url('@/assets/img/15.png');
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
-  }
+.iconfont {
+  position: absolute;
+  top: 35px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  background-image: url("@/assets/img/15.png");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
 #col1 {
   color: #fff;
   text-decoration: none;
@@ -650,7 +631,7 @@ this.$http.post('/home/index',{
   font-size: 14px;
   color: #a8abb2;
 }
-.font{
+.font {
   position: absolute;
   width: 18px;
   height: 18px;
@@ -658,16 +639,6 @@ this.$http.post('/home/index',{
   top: 12px;
   cursor: pointer;
 }
-/* .font {
-  position: absolute;
-  left: 307px;
-  top: 12px;
-  width: 18px;
-  height: 18px;
-  background-image: url("@/assets/img/10.png");
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-} */
 .user_img {
   width: 42px;
   height: 42px;
@@ -675,7 +646,7 @@ this.$http.post('/home/index',{
   cursor: pointer;
 }
 :deep(.el-dropdown-menu__item:hover) {
-  color: #2AB18B
+  color: #2ab18b;
 }
 .img {
   width: 100%;
@@ -696,7 +667,7 @@ this.$http.post('/home/index',{
   display: flex;
   width: 1200px;
   height: 50px;
-  margin: 0 auto;
+  margin: 13px auto;
 }
 .public {
   width: 116px;
@@ -705,13 +676,10 @@ this.$http.post('/home/index',{
   justify-content: space-evenly;
   align-content: center;
   font-size: 14px;
-  color: #888;
-  cursor: pointer;
-  /* text-align: center;
-    line-height: 50px; */
-}
-.public:hover {
   color: #fff;
+  cursor: pointer;
+  text-align: center;
+  line-height: 50px;
 }
 .clear {
   color: #888;
@@ -754,8 +722,16 @@ this.$http.post('/home/index',{
 #logOut:hover {
   color: #2ab18b;
 }
-.iconColor{
-  color: #2AB18B;
+.iconColor {
+  color: #2ab18b;
+}
+.selectedActive {
+  background: #2ab18b;
+  border-radius: 40px;
+}
+#app {
+  min-height: 100vh;
+  background: #f0f2f5;
 }
 </style>
 <style>
@@ -764,10 +740,11 @@ this.$http.post('/home/index',{
   padding: 0;
   list-style: none;
 }
-body{
-  background: #f0f2f5;
+body {
+  width: 100%;
+  height: 100%;
 }
-.el-input__inner{
+.el-input__inner {
   position: relative;
   border-radius: 40px;
 }

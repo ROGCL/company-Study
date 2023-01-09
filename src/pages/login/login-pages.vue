@@ -1,6 +1,8 @@
 <template>
   <!-- 登录页 -->
-  <div>
+  <div class="window"
+
+  >
     <!-- 登录框 -->
     <div class="login">
        <div class="login-title"></div>
@@ -21,7 +23,7 @@
 
            </div>
             <div class="submit-form">
-              <div class="login-buttom" @click="submit">登录</div>
+              <div class="login-buttom" @click="submit"><span v-if="loginAttitube == false">登录</span><span v-else><i class="el-icon-loading"></i>登录中...</span></div>
               <div class="reset" @click="resetForm">重置</div>
            </div>
     </div>
@@ -34,6 +36,7 @@ export default {
   data() {
     return {
       // ID: "",
+      fullscreenLoading:false,
       passwordShow:false,
       user_id:'',
       token:"",
@@ -48,10 +51,12 @@ export default {
         password: [{
           required: true, message: "密码不能为空", trigger: 'blur'
         }]
-      }
+      },
+      loginAttitube:false
     };
   },
   mounted(){
+    
     window.addEventListener('keyup',this.keyUp)
   },
   beforeDestroy(){
@@ -69,9 +74,11 @@ export default {
       }
     },
    submit() {
+    this.loginAttitube = true
     if(this.login.account == "" || this.login.password == ""){
       this.$message.error('请输入账号或密码后进行登录操作')
     }else{
+      this.fullscreenLoading = true
      this.$http
         .post("/user/login", {
           username: this.login.account,
@@ -80,9 +87,9 @@ export default {
         .then((res) => {
 
           if(res.data.code == 1){
+            
             this.user_id = res.data.data.user_info.id
           localStorage.setItem('user_id',res.data.data.user_info.id)
-          console.log(res.data,111)
           this.token = res.data.data.token
           sessionStorage.setItem("token",this.token );
           // console.log(res.data.data.user_info.id,6666);
@@ -91,23 +98,40 @@ export default {
           // 存储登录的用户信息
           let data = JSON.stringify(res.data.data.user_info);
           localStorage.setItem("user_info", data);
-            this.$router.push('/homePages')
+          
+          this.getCourseCate()
+            setTimeout(()=>{
+              // this.fullscreenLoading = false
+              this.$router.push('/homePages')
+            },1000)
           }else{
             this.$message.error('请输入正确的用户名或密码')
           }
-
-
-        })
-        .catch((err) => {
-          console.log(err);
         })
       }
     },
+    //获取课程分类信息
+    getCourseCate(){
+      this.$http.get('/home/course/cate').then((res)=>{
+        //存储课程分类信息
+        localStorage.setItem('courseCate',JSON.stringify(res.data.data.list))
+      })
+    }
   },
 };
 </script>
 
 <style scoped>
+.window{
+  width: 100%;
+  height: 100vh;
+  background-image: url("@/assets/img/8.png");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 .login {
   position: relative;
   width: 434px;
@@ -183,32 +207,7 @@ export default {
   padding: 0;
   list-style: none;
 }
-body {
-  width: 100%;
-  height: 100vh;
-  background-image: url("@/assets/img/8.png");
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
 .el-form-item{
   margin-bottom: 10px;
 }
-/* @media (max-width:768px) {
-    html{
-        background-color: #fff;
-    }
-}
-@media (min-width:992px) {
-    html{
-        background-color: pink;
-    }
-}
-@media (min-width:1200px) {
-    html{
-        background-color: skyblue;
-    }
-} */
 </style>

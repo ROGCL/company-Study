@@ -223,7 +223,6 @@ export default {
     this.getListSource()  //请求回传的视频资源
         //接收返回来的数据
         this.list = this.$route.query.form
-    console.log(this.list,'表单内容1')
 
   },
   methods:{
@@ -233,7 +232,6 @@ export default {
       }).then((res)=>{
         let data = res.data.data
         this.courseData = data.series
-        console.log(this.courseData,'courseData')
       })
     },
     //取消回退界面
@@ -242,7 +240,6 @@ export default {
     },
     //保存提交更新后的表单
     submitCourse(){
-      console.log(this.list,'列表数据')
       this.$http.post('/course/update',{
         id:this.list.id,
         course_cover_url:this.list.course_cover_url,
@@ -252,7 +249,6 @@ export default {
         posid:this.list.posid,
         series:this.courseData
       }).then((res)=>{
-        console.log(res.data)
         if(res.data.code == 1){
           this.$router.back()
         }
@@ -268,8 +264,6 @@ export default {
       video_url:""
      }
      this.courseData.push(obj)
-     console.log(this.courseData)
-       // alert(11111)
     },
     //删除按钮进行的操作
     removeList(ind){
@@ -277,7 +271,6 @@ export default {
       
     },
     changeSource(item){
-      console.log(item)
       item.video_url = ''
     },
     changeImgSource(){
@@ -317,14 +310,11 @@ export default {
         return false;
       }
     },
-    uploadImgSuccess(res, file) {
-      console.log(res, "imgRes");
-      console.log(file, "file");
+    uploadImgSuccess(res) {
       this.list.course_cover_url = res.data.url;
     },
     //上传视频前的校验
     beforeUploadVideo(file,idx) {
-      console.log('%caddMoreClass-pages.vue line:322 index', 'color: #007acc;', idx);
       this.currentIdx = idx
       this.loadingstate = true;
       let index = file.name.lastIndexOf(".");
@@ -336,17 +326,11 @@ export default {
       }
     },
     //视频上传过程中的加载操作
-    uploadVideoProcess(event, file, formList) {
-      console.log(event, "视频上传中1");
-      console.log(file, "视频上传中2");
-      console.log(formList, "视频上传中3");
-      console.log(file.status, "视频上传中response");
+    uploadVideoProcess() {
       this.loading = true;
     },
     //视频上传成功
     uploadVideoSuccess(res, file) {
-      console.log(res, "视频上传成功");
-      console.log(file);
       let obj = {
         blues_sort: this.currentIdx,
         video_url: file.response.data.url,
@@ -356,7 +340,6 @@ export default {
       };
       this.courseData[this.currentIdx] = obj
       this.loading = false
-      console.log(this.courseData)
     },
   }
 }

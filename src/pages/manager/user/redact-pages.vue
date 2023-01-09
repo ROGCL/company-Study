@@ -19,9 +19,9 @@
 </template>
 
 <script>
-import singleClassComponents from '@/components/singleClass-components.vue';
-import controlComponents from '@/components/control-components.vue';
-import moreClassComponents from '@/components/moreClass-components.vue';
+import singleClassComponents from '@/components/single/singleClass-components.vue';
+import controlComponents from '@/components/control/control-components.vue';
+import moreClassComponents from '@/components/more/moreClass-components.vue';
 export default {
 components:{controlComponents,singleClassComponents,moreClassComponents},
 data(){

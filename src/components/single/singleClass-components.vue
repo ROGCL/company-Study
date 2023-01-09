@@ -10,20 +10,27 @@
             上传视频资源
           </div>
           <div class="source-image"> 
-            <img :src="'127.0.0.1'+this.localVideoUrl" v-if="localVideoUrl == ''" class="localUrl-img">
+
             <el-upload
+            v-loading="loading"
             class="upload-demo"
             drag
-            action="https://jsonplaceholder.typicode.com/posts/"
-            v-else
+            action="http://172.168.11.229:9000/file/upload"
+            :before-upload="beforeUploadVideo"
+            :on-success="uploadVideoSuccess"
+            :on-progress="uploadVideoProcess"
+            :headers="headersData"
+            :show-file-list="false"
+            v-if="list.video_url == ''"
           >
             <i class="el-icon-upload"></i>
             <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
           </el-upload>
+          <video :src="'http://172.168.11.229:9000' + list.video_url" style="width:360px;height:180px;position: absolute;left: 0;top: 0;" controls v-else-if="list.video_url !== ''"></video>
+          <video :src="'http://172.168.11.229:9000' + videoUrl" style="width:360px;height:180px;position: absolute;left: 0;top: 0;" controls v-show="videoUrl !== ''"></video>
           </div>
-          <div class="video-path"></div>
           <div class="upload-replace1">
-          <button class="up-btn"><span class="font icon-public"></span>更改</button>
+          <button class="up-btn" @click="clearListVideoContent"><span class="font icon-public"></span>更改</button>
         </div>
         <div class="title">
           <span class="point-public"></span>
@@ -31,21 +38,28 @@
         </div>
         <!-- 图片盒子 -->
         <div class="img-banner">
-          <img :src="'127.0.0.1:9000'+ this.localUrl" alt="" v-if="localUrl == ''" class="localUrl-img">
           <el-upload
             class="upload-demo"
+            :class="{showing:showing ? 1 : 0}"
             drag
-            action="https://jsonplaceholder.typicode.com/posts/"
-            v-else
+            action="http://172.168.11.229:9000/file/upload"
+            :on-success="uploadImgSuccess"
+            :before-upload="beforeUploadImg"
+            :headers="headersData"
+            :show-file-list="false"
+            v-if="list.course_cover_url == ''"
+            ref="showing"
           >
             <i class="el-icon-upload"></i>
             <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
           </el-upload>
+          <img :src="'http://172.168.11.229:9000' + list.course_cover_url" alt="" class="img-cover" v-else>
+          <img :src="'http://172.168.11.229:9000' + formList.course_cover_url" alt="" class="img-cover" v-show="formList.course_cover_url !== ''">
         </div>
         <!-- 下方文字描述区域 -->
         <h5>推荐图片尺寸 300*170px大小＜30M格式推荐 png、jpg</h5>
         <div class="upload-replace">
-          <button class="up-btn"><span class="font icon-public"></span>更改</button>
+          <button class="up-btn" @click="clearListImgContent"><span class="font icon-public"></span>更改</button>
         </div>
         <!-- 文本域 -->
         <div class="textarea">
@@ -57,14 +71,14 @@
             cols="30"
             rows="10"
             maxlength="40"
-            v-model="localcourseData.course.title"
+            v-model="list.title"
           ></textarea>
         </div>
         <!-- 类目选择 -->
         <div class="select-class select-public">
           <span class="point-public"></span>
           类目选择
-          <el-select v-model="localCate" placeholder="请选择" class="el-select">
+          <el-select placeholder="请选择" class="el-select" v-model="list.cate">
             <el-option
               v-for="item in options1"
               :key="item.value"
@@ -78,7 +92,7 @@
         <div class="select-introduce select-public">
           <span class="point-public"></span>
           推荐位选择
-          <el-select v-model="value2" placeholder="请选择" class="el-select">
+          <el-select v-model="list.posid" placeholder="请选择" class="el-select" clearable>
             <el-option
               v-for="item in options2"
               :key="item.value"
@@ -90,10 +104,8 @@
         </div>
         <!-- 取消和保存按钮 -->
         <div class="del-save-btn">
-          <router-link to="/imporantPages">
-            <el-button>取消</el-button>
-          </router-link>
-          <el-button>保存</el-button>
+            <el-button @click="backToEditate">取消</el-button>
+          <el-button @click="submitFormList">保存</el-button>
         </div>
       </div>
       </div>
@@ -102,61 +114,43 @@
   
   <script>
   export default {
-    props:{
-      title:{type:String},
-      course_cover_url:{type:String},
-      cate:{type:String},
-      posid:{type:String},
-      //视频文件名
-      video_file_name:{type:String},
-      //视频链接
-      video_url:{type:String},
-      courseData:{type:Object}
-    },
   data(){
     return{
-      localcourseData:{course:{},series:{}},
-      localTitle:this.title,
-      localCate:this.cate,
-      localPosid:this.posid,
-      localUrl:this.course_cover_url,
-      localFileName:this.video_file_name,
-      localVideoUrl:this.video_url,
       options1: [
           {
-            value: "产品经理",
+            value: 1,
             label: "产品经理",
           },
           {
-            value: "技术开发",
+            value: 2,
             label: "技术开发",
           },
           {
-            value: "运营推广",
+            value: 3,
             label: "运营推广",
           },
           {
-            value: "内部讲堂",
+            value: 4,
             label: "内部讲堂",
           },
           {
-            value: "职场通用素质",
+            value: 5,
             label: "职场通用素质",
           },
           {
-            value: "产品与设计",
+            value: 6,
             label: "产品与设计",
           },
           {
-            value: "管理与领导力",
+            value: 7,
             label: "管理与领导力",
           },
           {
-            value: "数据分析",
+            value: 8,
             label: "数据分析",
           },
           {
-            value: "其他",
+            value: 100,
             label: "其他",
           },
         ],
@@ -166,13 +160,22 @@
           {
             value: "精品课程",
             label: "精品课程",
-          },
-          {
-            value: "其他推位",
-            label: "其他推位",
-          },
+          }
         ],
         value2: "",
+        formList:{
+          course_cover_url:"",
+          attribute:1,
+          title:"",
+          cate:1,
+          posid:1,
+          series:[]
+        },
+        //这里是接收路由query过来的数据
+        list:{},
+        loading:false,
+        showing:false, //控制显示隐藏的字段
+        videoUrl:""
     }
   },
   watch:{
@@ -182,28 +185,141 @@
     
   },  
   mounted(){
+    this.list = this.$route.query.form
     this.choosePosid()
-  },
-  updated(){
-    // 给textarea挂载默认值
-    // if(this.localTitle !== ''){
-    //   document.getElementById('input-area').value = this.localTitle
-    // }else{
-    //   document.getElementById('input-area').value = ''
-    // }
+    this.list.series = JSON.parse(localStorage.getItem('series'))
   },
   methods:{
     choosePosid(){
-    // 判断推荐位
-    if(this.localPosid == 0){
-      this.value2 = '其他推位'
-    }else if(this.localPosid == 1){
-      this.value2 = '精品推位'
-    }else{
-      this.value2 = ''
+  },
+  //点击取消时，回到表单界面
+  backToEditate(){
+    this.$router.push('/imporantPages')
+  },
+  //视频资源的更改按钮
+  clearListVideoContent(){
+    this.list.video_url = ''
+    if(this.videoUrl !== ''){
+      this.videoUrl = ''
     }
+  },
+  //视频封面的更改按钮
+  clearListImgContent(){
+      this.list.course_cover_url = ''
+    if(this.formList.course_cover_url !== ''){
+      this.formList.course_cover_url = ''
+    }
+  },
+   //图片上传成功
+   uploadImgSuccess(res){
+    this.formList.course_cover_url = res.data.url
+  },
+  //视频上传过程中的加载操作
+  uploadVideoProcess(){
+    this.loading = true
+  },
+  //视频上传成功
+  uploadVideoSuccess(res,file){
+    let obj = {
+      blues_sort:1,
+      video_url:file.response.data.url,
+      video_title:file.name,
+      video_duration:file.response.data.time_log,
+      video_file_name:file.response.data.name
+    }
+    this.formList.series.push(obj)
+    this.loading = false
+    this.videoUrl = res.data.url
+  },
+  //上传之前校验文件格式
+  beforeUploadImg(file){
+  this.loadingstate = true
+  let index = file.name.lastIndexOf(".")
+  let extension = file.name.substr(index + 1)
+  let extensionList = [
+    "png",
+    "PNG",
+    "jpg",
+    "JPG",
+    "jpeg",
+    "JPEG",
+    "bmp",
+    "BMP"
+  ]
+  let isLt2M = file.size / 1024 / 1024 < 10
+  if(!isLt2M){
+    this.$message({
+      message:"封面不能超出10M",
+      type:"warning",
+      center:true
+    })
+
+    return false
+  }else if(extensionList.indexOf(extension) < 0){
+    this.$message({
+      message:"当前文件格式不支持",
+      type:"error",
+      center:true
+    })
+
+    return false
   }
+  },
+  //上传视频前的校验
+  beforeUploadVideo(file){
+   this.loadingstate = true
+   let index = file.name.lastIndexOf(".")
+  let extension = file.name.substr(index + 1)
+  let extensionList = [
+    "mp4"
+  ]
+  if(extensionList.indexOf(extension) < 0){
+    this.$message.error("上传视频的格式应该为mp4格式")
+
+    return false
   }
+  },
+  //发送表单提交过程
+  submitFormList(){
+    if(this.list.course_cover_url !== ''){
+      this.formList.course_cover_url = this.list.course_cover_url
+    }
+    if(this.list.series.length > 0){
+      this.formList.series = this.list.series
+    }
+    if(this.list.cate ){
+      this.formList.cate = this.list.cate
+    }
+    this.$http.post('/course/add',{
+      //...this.formList
+      course_cover_url:this.formList.course_cover_url,
+      attribute:this.formList.attribute,
+      title:this.list.title,
+      cate:this.formList.cate,
+      series:this.formList.series
+    }).then((res)=>{
+      if(res.data.message == 'success'){
+        this.$router.push('/imporantPages')
+      }else{
+        this.$message.warning('已存在相同标题的课程,请仔细检查')
+      }
+    })
+  }
+  },
+  computed:{
+//带上请求头用户的token，不然不生效果
+headersData(){
+  let loginToken = sessionStorage.getItem("token");
+    if (loginToken) {
+      // 跳转登录
+      return {
+      Authenticator: loginToken,
+    }
+    }
+    return false
+
+},
+},
   }
   </script>
   
@@ -218,7 +334,7 @@
     margin-left: 216px;
     margin-top: 56px;
     /* width: 1688px; */
-    height: 100vh;
+    height: 116vh;
     background: #fff;
    }
   
@@ -252,6 +368,7 @@
     border-radius: 50%;
   }
   .img-banner {
+    position: relative;
     margin-left: 57px;
     margin-top: 8px;
     width: 360px;
@@ -259,6 +376,7 @@
     border-radius: 4px;
   }
   .source-image{
+    position: relative;
     width: 360px;
     height: 180px;
     margin-left: 57px;
@@ -273,7 +391,7 @@
   }
   .textarea {
     margin-left: 57px;
-    margin-top: 62px;
+    margin-top: 20px;
     width: 360px;
     height: 112px;
     font-size: 14px;
@@ -360,6 +478,18 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+  .img-cover{
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    /* margin-top: 8px; */
+    border-radius: 4px;
+  }
+  .showing{
+    display: none;
   }
   </style>
   <style>

@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- 通用头部 -->
-    <controlComponents></controlComponents>
+    <controlComponents :manageActive="1"></controlComponents>
     <!-- 表单内容区域 -->
     <div class="input-area">
       <!-- 标题 -->
@@ -9,12 +9,22 @@
       <!-- 视频ID/标题选择框区域 -->
       <div class="public ID">
         <span>视频ID/标题</span>
-        <input v-model="input" placeholder="请输入" class="input-public" />
+        <el-input
+          type="text"
+          v-model="title"
+          placeholder="请输入"
+          size="medium"
+        ></el-input>
       </div>
       <!-- 课程属性下拉菜单选择区域 -->
       <div class="attribute public">
         <span>课程属性</span>
-        <el-select v-model="value2" placeholder="请选择" class="input-public">
+        <el-select
+          v-model="attribute"
+          placeholder="请选择"
+          class="input-public"
+          size="medium"
+        >
           <el-option
             v-for="item in options2"
             :key="item.value"
@@ -27,12 +37,17 @@
       <!-- 类目下拉菜单选择区域 -->
       <div class="public category">
         <span>类目</span>
-        <el-select v-model="value3" placeholder="请选择" class="input-public">
+        <el-select
+          v-model="cate"
+          placeholder="请选择"
+          class="input-public"
+          size="medium"
+        >
           <el-option
-            v-for="item in options3"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
+            v-for="(item, index) in this.courseCate"
+            :key="index"
+            :label="item"
+            :value="index"
           >
           </el-option>
         </el-select>
@@ -40,7 +55,12 @@
       <!-- 推荐位下拉菜单选择区域 -->
       <div class="public recommended">
         <span>推荐位</span>
-        <el-select v-model="value4" placeholder="请选择" class="input-public">
+        <el-select
+          v-model="posid"
+          placeholder="请选择"
+          class="input-public"
+          size="medium"
+        >
           <el-option
             v-for="item in options4"
             :key="item.value"
@@ -54,7 +74,7 @@
       <div class="public time-add">
         <span>新增时间</span>
         <el-date-picker
-          v-model="value6"
+          v-model="courseNewAdd"
           type="datetimerange"
           :picker-options="pickerOptions"
           range-separator="至"
@@ -71,7 +91,7 @@
       <div class="public time-Modify">
         <span>修改时间</span>
         <el-date-picker
-          v-model="value7"
+          v-model="courseAfterAdd"
           type="datetimerange"
           :picker-options="pickerOptions"
           range-separator="至"
@@ -87,7 +107,12 @@
       <!-- 上下架区域，下拉菜单选择框 -->
       <div class="public Up-Down">
         <span>上下架状态</span>
-        <el-select v-model="value5" placeholder="请选择" class="input-public">
+        <el-select
+          v-model="status"
+          placeholder="请选择"
+          class="input-public"
+          size="medium"
+        >
           <el-option
             v-for="item in options5"
             :key="item.value"
@@ -109,7 +134,7 @@
       </div>
     </div>
     <!-- 选择区域，增删改查区域 -->
-    <div class="bottom-area">
+    <div class="bottom-area" v-loading="loading">
       <!-- 表单展示区域 -->
       <div class="show-area">
         <el-table
@@ -117,11 +142,10 @@
           :data="listform"
           tooltip-effect="dark"
           style="width: 100%"
-          @selection-change="handleSelectionChange($event,listform)"
+          @selection-change="handleSelectionChange($event, listform)"
         >
-        <!-- <template slot-scope="scope"> -->
-          <el-table-column type="selection" width="48">
-          </el-table-column>
+          <!-- <template slot-scope="scope"> -->
+          <el-table-column type="selection" width="48"> </el-table-column>
           <!-- </template> -->
           <el-table-column label="ID" prop="id" width="75"></el-table-column>
           <el-table-column label="视频封面" width="126" prop="course_cover_url">
@@ -133,10 +157,7 @@
                   object-fit: cover;
                   cursor: pointer;
                 "
-                :src="
-                  'http://172.168.11.229:9000' +
-                  listform[scope.$index].course_cover_url
-                "
+                :src="listform[scope.$index].course_cover_url"
                 :preview-src-list="srcList"
                 @click="
                   showImageSource(listform[scope.$index].course_cover_url)
@@ -148,7 +169,7 @@
           <el-table-column prop="address" label="视频" width="64">
             <template slot-scope="scope">
               <span
-                @click="pushVideo(listform[scope.$index])"
+                @click="pushVideo(listform[scope.$index].id)"
                 style="cursor: pointer"
                 class="preview"
                 >预览</span
@@ -251,11 +272,11 @@
             <span class="del-btn area-btn-public"></span>
             删除
           </div>
-          <div @click="shelfCourse(multipleSelection)">
+          <div @click="shelfCourse(multipleSelection, 'up')">
             <span class="up-btn area-btn-public"></span>
             上架
           </div>
-          <div @click="takeOffCourse(multipleSelection)">
+          <div @click="shelfCourse(multipleSelection, 'down')">
             <span class="up-btn area-btn-public"></span>
             下架
           </div>
@@ -266,7 +287,7 @@
         </div>
         <!-- 分页区域 -->
         <div class="pagination-area">
-          <span>共{{ this.total }}条</span>
+          <span>共{{ total }}条</span>
           <!-- 分页器 -->
           <div class="el-pagination">
             <el-pagination
@@ -278,6 +299,7 @@
               :total.sync="total"
               hide-on-single-page
             >
+              <!-- 报错出现在这里:total.sync="total" -->
             </el-pagination>
           </div>
         </div>
@@ -288,7 +310,8 @@
     <!-- 头部右侧取消按钮 -->
     <!-- 单节课多节课的选项按钮 -->
     <el-dialog :visible.sync="dialogVisible">
-      <span style="padding: 30px 0;">请选择您要新增的课程类别</span>
+      <span style="padding: 30px 85px">请选择您要新增的课程类别</span>
+
       <span slot="footer" class="dialog-footer">
         <router-link to="/addSingleClassPages">
           <el-button @click="dialogVisible = false">单节课</el-button>
@@ -300,17 +323,17 @@
         </router-link>
       </span>
     </el-dialog>
-  
   </div>
 </template>
 
 <script>
-import controlComponents from "@/components/control-components.vue";
+import controlComponents from "@/components/control/control-components.vue";
 export default {
   components: { controlComponents },
   data() {
     return {
-      classification:true,
+      courseCate: {},
+      classification: true,
       input: "",
       //课程属性
       options2: [
@@ -323,47 +346,9 @@ export default {
           label: "系列课",
         },
       ],
-      value2: "",
+      courseAttritube: "",
       //类目
-      options3: [
-        {
-          value: "1",
-          label: "产品经理",
-        },
-        {
-          value: "2",
-          label: "技术开发",
-        },
-        {
-          value: "3",
-          label: "运营推广",
-        },
-        {
-          value: "4",
-          label: "内部讲堂",
-        },
-        {
-          value: "5",
-          label: "职场通用素质",
-        },
-        {
-          value: "6",
-          label: "产品与设计",
-        },
-        {
-          value: "7",
-          label: "管理与领导力",
-        },
-        {
-          value: "8",
-          label: "数据分析",
-        },
-        {
-          value: "100",
-          label: "其他",
-        },
-      ],
-      value3: "",
+      courseCategory: "",
       //推荐位
       options4: [
         {
@@ -375,7 +360,7 @@ export default {
           label: "其他推位",
         },
       ],
-      value4: "",
+      courseRecommend: "",
       //上下架状态
       options5: [
         {
@@ -387,12 +372,12 @@ export default {
           label: "上架中",
         },
         {
-          value: "2",
+          value: "0",
           label: "下架",
         },
       ],
       multipleSelection: [],
-      value5: "",
+      courseState: "", //课程状态
       videoShade: false, //点击封面预览弹出层字段
       videoShadeSource: "", //点击封面预览传进去的视频资源路径
       pickerOptions: {
@@ -426,14 +411,14 @@ export default {
           },
         ],
       },
-      value6: "",
-      value7: "",
+      courseNewAdd: "",
+      courseAfterAdd: "",
       checked: false,
       // checkedList:[],
       // 课程列表请求字段
       id: "",
       title: "",
-      attritube: "",
+      attribute: "",
       cate: "",
       posid: "",
       status: "",
@@ -445,49 +430,37 @@ export default {
       order: "",
       is_download: "",
       listform: [],
-      total: "",
+      total: 0,
       dialogVisible: false,
-      srcList: [""],
+      srcList: [],
+      loading: false,
+      operation: "", // 上架或下架
     };
   },
   watch: {},
   mounted() {
     //默认请求第一页的数据
     this.getSearchList();
+    // 获取课程分类的数据
+    this.courseCate = JSON.parse(localStorage.getItem("courseCate"));
   },
   methods: {
-    handleSizeChange(val) {
-      console.log(`每页 ${val} 条`);
+    handleSizeChange() {
     },
     //此处是做分页数据的处理，点击分页后展示不同的数据
-    handleCurrentChange() {
-      this.$http
-        .post("/course/list", {
-          id: this.id,
-          title: this.title,
-          attritube: this.attritube,
-          cate: this.cate,
-          posid: this.posid,
-          status: this.status,
-          time_add: this.time_add,
-          time_update: this.time_update,
-          page: this.page,
-          page_size: this.page_size,
-          prop: this.prop,
-          order: this.order,
-          is_download: this.is_download,
-        })
-        .then((res) => {
-          this.listform = res.data.data.list;
-        });
+    handleCurrentChange(val) {
+      this.page = val
+        this.getSearchList();
+      
     },
     // 默认请求第一页的数据列表
     getSearchList() {
+      this.loading = true;
       this.$http
         .post("/course/list", {
           id: this.id,
           title: this.title,
-          attritube: this.attritube,
+          attribute: this.attribute,
           cate: this.cate,
           posid: this.posid,
           status: this.status,
@@ -500,80 +473,55 @@ export default {
           is_download: this.is_download,
         })
         .then((res) => {
+          setTimeout(() => {
+            this.loading = false;
+          }, 500);
+          this.clearList()
           this.listform = res.data.data.list;
-          console.log(res.data.data);
           this.total = res.data.data.total;
         });
     },
     // 重置清除筛选条件的操作
     clearList() {
-      this.input = "";
-      this.value2 = "";
-      this.value3 = "";
-      this.value4 = "";
-      this.value5 = "";
-      this.value6 = "";
-      this.value7 = "";
+      this.title = "";
+      this.attribute = "";
+      this.cate = "";
+      this.posid = "";
+      this.status = "";
+      this.courseNewAdd = "";
+      this.courseAfterAdd = "";
     },
     //搜索做的操作
     searchListForm() {
-      this.$http
-        .post("/course/list", {
-          page: this.page,
-          page_size: this.page_size,
-          id: this.input,
-          title: this.input,
-          attribute: this.value2,
-          cate: this.value3,
-          posid: this.value4,
-        })
-        .then((res) => {
-          console.log(res.data, 990099);
-          this.listform = res.data.data.list
-          this.total = res.data.data.total //分页器的数据总数
-          //搜索后清空选项
-          this.clearList()
-        });
+      this.getSearchList();
     },
-    handleClose() {},
     //课程的删除操作
     deleteCourse(id) {
-      this.$confirm('此操作将永久删除该文件,是否继续?',{
-        confirmButtonText:'确认',
-        cancelButtonText:'取消',
-        type:'warning',
-        center:true
-      }).then(()=>{
-      this.$http
-        .post("/course/del", {
-          id,
-        })
-        .then((res) => {
-          console.log(res);
-          //如果删除成功就重新获取列表数据即可
-          if (res.data.message == "success") {
-            this.getSearchList();
-          }
-        });
-        this.$message.success('删除成功')
-      }).catch(()=>{
-        this.$message.info('已取消删除')
+      this.$confirm("此操作将永久删除该文件,是否继续?", {
+        confirmButtonText: "确认",
+        cancelButtonText: "取消",
+        type: "warning",
+        center: true,
       })
-
-      console.log(id, "当节课的id为");
-    },
-    btnDeleteCourse(id) {
-      this.$http
-        .post("/course/del", {
-          id,
+        .then(() => {
+          this.$http
+            .post("/course/del", {
+              id,
+            })
+            .then((res) => {
+              //如果删除成功就重新获取列表数据即可
+              if (res.data.message == "success") {
+                this.getSearchList();
+              }
+            });
+          this.$message.success("删除成功");
         })
-        .then((res) => {
-          console.log(res);
+        .catch(() => {
+          this.$message.info("已取消删除");
         });
     },
+    //表格中的上架
     shelves(id, status) {
-      console.log(id);
-      console.log(status);
       if (status == 3 || status == 1) {
         this.$message.error("这个视频正在上架中,请稍后再试");
         return;
@@ -590,98 +538,80 @@ export default {
           });
       }
     },
-    pushVideo(source) {
-      console.log(source);
+    //预览视频推送
+    pushVideo(id) {
       this.$router.push({
         path: "/broadPages",
         query: {
-          source,
+          course_id: id,
         },
       });
     },
+    //大图预览的推送
     showImageSource(url) {
-      this.srcList.push("http://172.168.11.229:9000" + url);
-    },
-    select(){
-      console.log('选择框')
+      // "process.env.VUE_APP_URL" +
+      this.srcList.push(url);
     },
     //选择框中的值
-    handleSelectionChange(val,id) {
-      console.log(val,'val')
-      console.log(id,'id')
-        this.multipleSelection = val;
-        console.log(this.multipleSelection,'mul')
-      },
-      deleteSelection(val){
-        console.log(val,'888')
-        if(val.length == 0){
-          this.$message.error('请选择后在进行操作')
-        }else{
-          this.$confirm('此操作将永久删除该文件,是否继续?',{
-        confirmButtonText:'确认',
-        cancelButtonText:'取消',
-        type:'warning',
-        center:true
-      }).then(()=>{
-          this.multipleSelection.forEach((val)=>{
-          console.log(val.id)
-           this.$http.post('/course/del',{
-            id:val.id
-           }).then((res)=>{
-            console.log(res)
-            if(res.data.code == 1){
-              this.$message.success('删除成功')
-              this.getSearchList()
-            }
-           })
+    handleSelectionChange(val) {
+      this.multipleSelection = val;
+    },
+    //删除课程
+    deleteSelection(val) {
+      if (val.length == 0) {
+        this.$message.error("请选择后在进行操作");
+      } else {
+        this.$confirm("此操作将永久删除该文件,是否继续?", {
+          confirmButtonText: "确认",
+          cancelButtonText: "取消",
+          type: "warning",
+          center: true,
         })
-      }).catch(()=>{
-        this.$message.info('已取消删除')
-      })
-
-        }
-
-      },
-      shelfCourse(val){
-        console.log(val)
-        if(val.length == 0){
-          this.$message.error('请选择后在进行操作')
-        }else{
-          this.multipleSelection.forEach((val)=>{
-        this.$http.post('/course/shelves',{
-          id:val.id,
-          operation: "up"
-        }).then((res)=>{
-          console.log(res)
-          if(res.data.code == 1){
-            this.getSearchList()
-          }else{
-            this.$message.error('操作有误，请重试')
-          }
-        })
-       })
-        }
-
-      },
-      takeOffCourse(val){
-        console.log(val)
-        if(val.length == 0){
-          this.$message.error('请选择后在进行操作')
-        }else{
-          this.multipleSelection.forEach((val)=>{
-          this.$http.post('course/shelves',{
-            id:val.id,
-            operation:"down"
-          }).then((res)=>{
-            console.log(res)
-            if(res.data.code == 1){
-              this.getSearchList()
-            }
+          .then(() => {
+            this.multipleSelection.forEach((val) => {
+              this.$http
+                .post("/course/del", {
+                  id: val.id,
+                })
+                .then((res) => {
+                  if (res.data.code == 1) {
+                    this.$message.success("删除成功");
+                    this.getSearchList();
+                  }
+                });
+            });
           })
-        })
-        }
-
+          .catch(() => {
+            this.$message.info("已取消删除");
+          });
       }
+    },
+    //下架课程
+    shelfCourse(val, option) {
+      if (option == "up") {
+        this.operation = "up";
+      } else {
+        this.operation = "down";
+      }
+      if (val.length == 0) {
+        this.$message.error("请选择后在进行操作");
+      } else {
+        this.multipleSelection.forEach((val) => {
+          this.$http
+            .post("/course/shelves", {
+              id: val.id,
+              operation: this.operation,
+            })
+            .then((res) => {
+              if (res.data.code == 1) {
+                this.getSearchList();
+              } else {
+                this.$message.error("操作有误，请重试");
+              }
+            });
+        });
+      }
+    },
   },
 };
 </script>
@@ -1056,7 +986,7 @@ h3 {
   list-style: none;
 }
 *::-webkit-scrollbar {
-	display: none;
+  display: none;
 }
 body {
   width: 100%;
@@ -1066,11 +996,14 @@ body {
 .el-date-range-picker__time-header {
   display: none;
 }
-.el-dialog{
+.el-input__inner {
+  border-radius: 8px;
+}
+.el-dialog {
   width: 20%;
   border-radius: 10px;
 }
-.el-dialog_body{
+.el-dialog_body {
   padding: 0;
   text-align: center;
 }
@@ -1091,7 +1024,7 @@ body {
 .el-table .cell {
   text-align: center;
   padding-left: 0;
-  white-space: nowrap;
+  /* white-space: nowrap; */
 }
 .el-table--scrollable-x .el-table__body-wrapper {
   overflow-x: hidden;

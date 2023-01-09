@@ -11,7 +11,7 @@ const routes = [
     {
         path: '/loginPages',
         name: 'loginPages',
-        component: () => import('@/pages/login/login-pages copy.vue')
+        component: () => import('@/pages/login/login-pages.vue')
     },
     {
         path: '/homePages',
@@ -21,7 +21,6 @@ const routes = [
             isAuth: true
         },
     },
-
     {
         path: '/symbolPages',
         name: 'symbolPages',
@@ -34,7 +33,7 @@ const routes = [
     {
         path: '/imporantPages',
         name: 'imporantPages',
-        component: () => import('@/pages/manager/Administrator/important-pages.vue'),
+        component: () => import('@/pages/manager/user/important-pages.vue'),
         meta: {
             isAuth: true
         },
@@ -43,7 +42,7 @@ const routes = [
     {
         path:'/addSingleClassPages',
         name:'addclassPages',
-        component:()=>import('@/pages/manager/course/addSingleClass-pages.vue'),
+        component:()=>import('@/pages/manager/addClass/addSingleClass-pages.vue'),
         meta:{
          isAuth:true
         }
@@ -52,7 +51,7 @@ const routes = [
      {
         path:'/addMoreClassPages',
         name:'addMoreClassPages',
-        component:()=>import('@/pages/manager/course/addMoreClass-pages.vue'),
+        component:()=>import('@/pages/manager/addClass/addMoreClass-pages.vue'),
         meta:{
          isAuth:true
         }
@@ -61,7 +60,7 @@ const routes = [
      {
       path:'/redactPages',
       name:'redactPages',
-      component:()=>import('@/pages/manager/Administrator/redact-pages.vue')
+      component:()=>import('@/pages/manager/user/redact-pages.vue')
      },
     {
         path: '/broadPages',

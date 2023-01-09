@@ -25,7 +25,7 @@
           v-loading="loading"
           class="upload-demo"
           drag
-          action="http://172.168.11.229:9000/file/upload"
+          :action="processUrl"
           :show-file-list="false"
           :before-upload="beforeUploadImg"
           :on-success="uploadImgSuccess"
@@ -36,7 +36,7 @@
           <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
         </el-upload>
         <img
-          :src="'http://172.168.11.229:9000' + formList.course_cover_url"
+          :src="formList.course_cover_url"
           alt=""
           class="img-cover"
           v-else
@@ -53,14 +53,7 @@
       <div class="textarea">
         <span class="point-public"></span>
         标题
-        <textarea
-          name=""
-          id="input-area"
-          cols="30"
-          rows="10"
-          maxlength="40"
-          v-model="formList.title"
-        ></textarea>
+        <el-input type="textarea" v-model="formList.title" maxlength="40" show-word-limit resize="none" cols="30" rows="4"></el-input>
       </div>
       <!-- 类目选择 -->
       <div class="select-class select-public"> 
@@ -68,10 +61,10 @@
         类目选择
         <el-select v-model="formList.cate" placeholder="请选择" class="el-select">
           <el-option
-            v-for="item in options1"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
+            v-for="(item,index) in courseCate"
+            :key="index"
+            :label="item"
+            :value="index"
           >
           </el-option>
         </el-select>
@@ -119,7 +112,7 @@
             class="upload-demo"
             ref="upload"
             drag
-            action="http://172.168.11.229:9000/file/upload"
+            :action="processUrl"
             :before-upload="file=>beforeUploadVideo(file,index)"
             :on-success="uploadVideoSuccess"
             :on-progress="uploadVideoProcess"
@@ -133,7 +126,7 @@
             </div>
           </el-upload>
           <video
-            :src="'http://172.168.11.229:9000' + item.videoUrl"
+            :src="item.videoUrl"
             style="width: 360px; height: 180px"
             controls
             v-else
@@ -149,13 +142,7 @@
         <div class="textarea1">
           <span class="point-public"></span>
           标题
-          <textarea
-            name=""
-            id="input-area1"
-            cols="30"
-            rows="10"
-            v-model="item.value"
-          ></textarea>
+          <el-input type="textarea" v-model="item.value" maxlength="40" show-word-limit resize="none" cols="30" rows="4"></el-input>
         </div>
         <!-- 删除按钮 -->
         <div class="delete-btn" v-show="item.videoUrl !== '' || item.value !== ''">
@@ -177,51 +164,13 @@
 </template>
 
 <script>
-import controlComponents from "@/components/control-components.vue";
+import controlComponents from "@/components/control/control-components.vue";
 export default {
   components: { controlComponents },
   data() {
     return {
+      processUrl:`${process.env.VUE_APP_URL}/file/upload`,
       currentIdx:0,
-      options1: [
-        {
-          value: 1,
-          label: "产品经理",
-        },
-        {
-          value: 2,
-          label: "技术开发",
-        },
-        {
-          value: 3,
-          label: "运营推广",
-        },
-        {
-          value: 4,
-          label: "内部讲堂",
-        },
-        {
-          value: 5,
-          label: "职场通用素质",
-        },
-        {
-          value: 6,
-          label: "产品与设计",
-        },
-        {
-          value: 7,
-          label: "管理与领导力",
-        },
-        {
-          value: 8,
-          label: "数据分析",
-        },
-        {
-          value: 100,
-          label: "其他",
-        },
-      ],
-      value1: "",
       //推荐位
       options2: [
         {
@@ -229,8 +178,6 @@ export default {
           label: "精品课程",
         },
       ],
-      value2: "",
-      value3: "",
       loadingstate: false,
       loading: false,
       formList: {
@@ -251,10 +198,12 @@ export default {
         },
       ],
       series:[],//系列课存储视频数据的字段
+      courseCate:{}, //课程分类的数据
     };
   },
   mounted(){
-    console.log('%caddMoreClass-pages.vue line:257 this.list', 'color: #007acc;', this.list);
+    this.courseCate = JSON.parse(localStorage.getItem('courseCate'))
+    // console.log('%caddMoreClass-pages.vue line:257 this.list', 'color: #007acc;', this.processUrl);
   },
   computed: {
     //带上请求头用户的token，不然不生效果
@@ -317,7 +266,7 @@ export default {
     uploadImgSuccess(res, file) {
       console.log(res, "imgRes");
       console.log(file, "file");
-      this.formList.course_cover_url = res.data.url;
+      this.formList.course_cover_url = process.env.VUE_APP_URL + res.data.url;
     },
     //上传视频前的校验
     beforeUploadVideo(file,idx) {
@@ -352,11 +301,11 @@ export default {
         video_file_name: file.response.data.name,
       };
       //当list的长度为1的时候进行默认操作
-      this.videoUrl = res.data.url; //后面的视频数据
+      this.videoUrl = process.env.VUE_APP_URL +res.data.url; //后面的视频数据
       this.loading = false;
       //给数组中的每一个对象一个标识,以避免影响操作
       this.series.push(obj)
-      this.list[this.currentIdx].videoUrl = res.data.url
+      this.list[this.currentIdx].videoUrl = process.env.VUE_APP_URL +res.data.url
       this.list[this.currentIdx].series = obj
     },
     clearList(index) {
@@ -382,6 +331,8 @@ export default {
       console.log(res,'result')
       if(res.data.code == 1){
         this.$router.push('/imporantPages')
+      }else{
+        this.$message.error(res.data.message)
       }
     })
     },
@@ -423,8 +374,6 @@ export default {
   margin-left: 706px;
   margin-top: 56px;
   width: 591px;
-  /* height: 600px; */
-  /* height: 926px; */
   height: 100vh;
   overflow-x: hidden;
   overflow-y: scroll;
@@ -434,7 +383,6 @@ export default {
 }
 .chapter-upload {
   position: relative;
-  /* margin-left: 706px; */
   margin-bottom: 16px;
   width: 591px;
   height: 514px;
@@ -676,7 +624,6 @@ export default {
   position: absolute;
   left: 116px;
   top: 798px;
-  /* width: 242px; */
   height: 32px;
 }
 .el-button {

@@ -65,7 +65,7 @@
 </template>
 
 <script>
-import controlComponents from '@/components/control-components.vue'
+import controlComponents from '@/components/control/control-components.vue'
 // let echarts = require('echarts')
 import echarts from "echarts";
 export default {
@@ -178,8 +178,6 @@ export default {
         .post("/study/courseTop", { user_id: localStorage.getItem("user_id") })
         .then((res) => {
           this.classTop = res.data.data.data;
-          console.log(this.classTop,'classTop')
-          // console.log(this.classTop)
           this.picture();
         });
     },
@@ -295,7 +293,7 @@ export default {
             this.classTop[4].course_title,
             this.classTop[5].course_title,
             this.classTop[6].course_title,
-            this.classTop[7].course_title,
+            // this.classTop[7].course_title,
             // this.classTop[8].course_title,
             // this.classTop[9].course_title,
           ],
@@ -346,12 +344,12 @@ export default {
                 },
               },
               //在数据传入时进行排序，下面三项放最大的
-              {
-                value: this.classTop[7].course_pv,
-                itemStyle: {
-                  color: "#2AB18B",
-                },
-              },
+              // {
+              //   value: this.classTop[7].course_pv,
+              //   itemStyle: {
+              //     color: "#2AB18B",
+              //   },
+              // },
               // {
               //   value: this.classTop[8].course_pv,
               //   itemStyle: {
@@ -378,7 +376,6 @@ export default {
       month = month > 9 ? month : "0" + month;
       let today = year + "年" + month + "月";
       let days = year+"-"+month
-      console.log(days)
       this.days = days
       this.today = today;
     },
@@ -391,7 +388,6 @@ export default {
         page_size:this.page_size
       }
       ).then((res)=>{
-        console.log(res.data.data)
         this.seconds = res.data.data.study_time
         this.changeTime()
       })
