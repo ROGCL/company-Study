@@ -167,8 +167,13 @@ methods:{
         })
       },
       //根据分页再次进行请求，分页后的数据
-      handleCurrentChange() {
-         this.getlist()
+      handleCurrentChange(val) {
+        this.page = val
+        if(this.user !== '' || this.user_id !== ''){
+            this.searchList()
+        }else{
+            this.getlist()
+        }
       },
     //搜索再发一次请求并渲染数据到页面上
       searchList(){

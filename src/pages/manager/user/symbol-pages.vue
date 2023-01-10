@@ -25,13 +25,13 @@
     </el-timeline-item>
        </el-timeline>
         <!-- 月份下的当天日期 -->
-        <h4>{{ ol.time1 }}</h4>
+        <h4>{{ ol.date | monthFilters }}</h4>
         <!-- 图片 -->
-        <img src="" alt="" class="img3" />
+        <img :src="ol.course_cover_url" alt="" class="img3" />
         <!-- 标题 -->
-        <h5>{{ ol.font }}</h5>
+        <h5>{{ ol.title }}</h5>
         <!-- 学习时长 -->
-        <h6>学习时长{{ ol.time2 }}</h6>
+        <h6>学习时长{{ ol.study_time_long | timeFilters }}</h6>
 
       </div>
       <!-- 日期选择器 -->
@@ -42,10 +42,11 @@
           placeholder="选择月"
           size="small"
           value-format="yyyy年MM月"
+          @change="chooseDate"
         >
         </el-date-picker>
       </div>
-      <h2>-没有更多数据啦-</h2>
+      <el-empty description="暂无更多数据了"></el-empty>
     </div>
     <!-- 右侧边栏 -->
     <div class="right-asideBar">
@@ -68,90 +69,12 @@
 import controlComponents from '@/components/control/control-components.vue'
 // let echarts = require('echarts')
 import echarts from "echarts";
+// import dayjs from "dayjs";
 export default {
   components:{controlComponents},
   data() {
     return {
-      el: [
-        {
-          id: 1,
-          time1: "2022-03-25",
-          font: "Spring Cloud 微服务架构设计实现广告系统（新版）",
-          time2: "23时23分45秒",
-        },
-        {
-          id: 2,
-          time1: "2022-03-24",
-          font: "Spring Cloud 微服务架构设计实现广告系统（新版）",
-          time2: "23时23分45秒",
-        },
-        {
-          id: 3,
-          time1: "2022-03-23",
-          font: "Spring Cloud 微服务架构设计实现广告系统（新版）",
-          time2: "23时23分45秒",
-        },
-        {
-          id: 4,
-          time1: "2022-03-22",
-          font: "Spring Cloud 微服务架构设计实现广告系统（新版）",
-          time2: "23时23分45秒",
-        },
-        {
-          id: 5,
-          time1: "2022-03-21",
-          font: "Spring Cloud 微服务架构设计实现广告系统（新版）",
-          time2: "23时23分45秒",
-        },
-        {
-          id: 6,
-          time1: "2022-03-20",
-          font: "Spring Cloud 微服务架构设计实现广告系统（新版）",
-          time2: "23时23分45秒",
-        },
-        {
-          id: 7,
-          time1: "2022-03-19",
-          font: "Spring Cloud 微服务架构设计实现广告系统（新版）",
-          time2: "23时23分45秒",
-        },
-        {
-          id: 8,
-          time1: "2022-03-18",
-          font: "Spring Cloud 微服务架构设计实现广告系统（新版）",
-          time2: "23时23分45秒",
-        },
-        {
-          id: 9,
-          time1: "2022-03-17",
-          font: "Spring Cloud 微服务架构设计实现广告系统（新版）",
-          time2: "23时23分45秒",
-        },
-        {
-          id: 10,
-          time1: "2022-03-16",
-          font: "Spring Cloud 微服务架构设计实现广告系统（新版）",
-          time2: "23时23分45秒",
-        },
-        {
-          id: 11,
-          time1: "2022-03-15",
-          font: "Spring Cloud 微服务架构设计实现广告系统（新版）",
-          time2: "23时23分45秒",
-        },
-        {
-          id: 12,
-          time1: "2022-03-14",
-          font: "Spring Cloud 微服务架构设计实现广告系统（新版）",
-          time2: "23时23分45秒",
-        },
-        {
-          id: 13,
-          time1: "2022-03-13",
-          font: "Spring Cloud 微服务架构设计实现广告系统（新版）",
-          time2: "23时23分45秒",
-        },
-      ],
+      el: [],
       value1: "",
       user_id: "",
       hotSearch: {},
@@ -170,6 +93,41 @@ export default {
     this.getTime();
     this.getHistory()
     this.user_id = JSON.parse(localStorage.getItem("user_id"));
+  },
+  filters:{
+        //秒数时间过滤器
+      timeFilters(val) {
+      //此处的val接收的就是item.video_duration
+      var t = "";
+      if (val > -1) {
+        var hour = Math.floor(val / 3600);
+        var min = Math.floor(val / 60) % 60;
+        var sec = val % 60;
+        if (hour < 10) {
+          t = "0" + hour + ":";
+        } else {
+          t = hour + ":";
+        }
+        if (min < 10) {
+          t += "0";
+        }
+        t += min + ":";
+        if (sec < 10) {
+          t += "0";
+        }
+        t += sec.toFixed(0);
+      }
+      return t;
+    },
+    //日期时间过滤器
+    monthFilters(val){
+      let total = val.toString()
+      let year = total.substring(0,4)
+      let month = total.substring(4,6)
+      let day = total.substring(6,8)
+      let result = `${year}年${month}月${day}日`
+      return result
+    }
   },
   methods: {
     //课程TOP榜的数据请求
@@ -388,6 +346,7 @@ export default {
         page_size:this.page_size
       }
       ).then((res)=>{
+        this.el = res.data.data.list
         this.seconds = res.data.data.study_time
         this.changeTime()
       })
@@ -412,13 +371,23 @@ export default {
             }
           }
           let result = "" + parseInt(secondTime);
+          if(secondTime > 0){
+            result = "" + parseInt(secondTime) + "秒"
+          }
           if(minuteTime > 0) {
-          result = "" + parseInt(minuteTime) + ":" + result;
+          result = "" + parseInt(minuteTime) + "分" + result;
          }
           if(hourTime > 0) {
          result = "" + parseInt(hourTime) + "小时" + result;
          }
          this.changeResult = result
+    },
+    //时间选择后，展示不同的数据
+    chooseDate(val){
+      let t = val.substring(0,4)
+      let d = val.substring(5,7)
+      this.days = `${t}-${d}`
+      this.getHistory()
     }
   },
 };
@@ -446,7 +415,7 @@ export default {
   font-size: 14px;
   color: #23262f;
   line-height: 59px;
-  margin-left: 451px;
+  margin-left: 400px;
 }
 .time1 p {
   display: inline-block;
@@ -484,7 +453,6 @@ export default {
 .img3 {
   width: 224px;
   height: 109px;
-  background: skyblue;
   margin-top: 12px;
   margin-left: 24px;
 }
@@ -545,36 +513,6 @@ export default {
   left: 31px;
   top: 78px;
 }
-/* .left-content{
-  position: absolute;
-  top: 80px;
-  left: 31px;
-  width: 311px;
-  height: 309px;
-  overflow-y: scroll;
-}
-.left-content::-webkit-scrollbar {
-  display: none;
-}
-.small-box{
-  width: 100%;
-  height: 12px;
-  margin-bottom: 21px;
-  font-size: 12px;
-  color: #606266;
-}
-.right-content{
-  position: absolute;
-  left: 357px;
-  top: 78px;
-  width: 523px;
-  height: 309px;
-  background: hotpink;
-  overflow-y: scroll;
-}
-.right-content::-webkit-scrollbar{
-  display: none;
-} */
 .font-public {
   display: block;
   padding-left: 24px;
@@ -633,4 +571,7 @@ body {
   .clearfix:after {
       clear: both
   }
+  /* .el-empty{
+    margin-top: 240px;
+  } */
 </style>

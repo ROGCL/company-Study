@@ -38,7 +38,6 @@ data(){
   }
 },
 mounted(){
-  console.log('%credact-pages.vue line:41 this.$route.query.', 'color: #007acc;', this.$route.query.form);
    this.getSingleList()
 },
 methods:{

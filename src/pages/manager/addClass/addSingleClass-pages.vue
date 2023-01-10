@@ -14,7 +14,6 @@
       </el-breadcrumb>
     </div>
     <!-- 单节课页面 -->
-    <!-- <singleClassComponents></singleClassComponents> -->
     <div class="single">
       <!-- 内部盒子 -->
       <div class="banner-spared">
@@ -23,35 +22,7 @@
           上传视频资源
         </div>
         <div class="source-image">
-          <!-- <img src="" class="localUrl-img"> -->
-          <el-upload
-            v-loading="loading"
-            class="upload-demo"
-            drag
-            :action="processUrl"
-            :before-upload="beforeUploadVideo"
-            :on-success="uploadVideoSuccess"
-            :on-progress="uploadVideoProcess"
-            :headers="headersData"
-            :show-file-list="false"
-            v-if="videoUrl == ''"
-          >
-            <i class="el-icon-upload"></i>
-            <div class="el-upload__text">
-              将MP4格式的文件拖到此处，或<em>点击上传</em>
-            </div>
-          </el-upload>
-          <video
-            :src="this.videoUrl"
-            style="width: 360px; height: 180px"
-            controls
-            v-else
-          ></video>
-        </div>
-        <div class="upload-replace1">
-          <button class="up-btn">
-            <span class="font icon-public"></span>更改
-          </button>
+          <upload :distinguish="1"/>
         </div>
         <div class="title">
           <span class="point-public"></span>
@@ -59,36 +30,10 @@
         </div>
         <!-- 图片盒子 -->
         <div class="img-banner">
-          <!-- <img src="" class="localUrl-img"> -->
-          <el-upload
-            class="upload-demo"
-            drag
-            :action="processUrl"
-            :on-success="uploadImgSuccess"
-            :before-upload="beforeUploadImg"
-            :headers="headersData"
-            :show-file-list="false"
-            v-if="this.formList.course_cover_url == ''"
-          >
-            <i class="el-icon-upload"></i>
-            <div class="el-upload__text">
-              将视频封面图片拖到此处，或<em>点击上传</em>
-            </div>
-          </el-upload>
-          <img
-            :src="this.formList.course_cover_url"
-            alt=""
-            class="img-cover"
-            v-else
-          />
+          <upload :distinguish="2"/>
         </div>
         <!-- 下方文字描述区域 -->
-        <h5>推荐图片尺寸 300*170px大小＜30M格式推荐 png、jpg</h5>
-        <div class="upload-replace">
-          <button class="up-btn">
-            <span class="font icon-public"></span>更改
-          </button>
-        </div>
+
         <!-- 文本域 -->
         <div class="textarea">
           <span class="point-public"></span>
@@ -157,8 +102,9 @@
 <script>
 // import singleClassComponents from '@/components/singleClass-components.vue';
 import controlComponents from "@/components/control/control-components.vue";
+import upload from '@/components/upload/upload-file.vue'
 export default {
-  components: { controlComponents },
+  components: { controlComponents,upload },
   data() {
     return {
       processUrl: `${process.env.VUE_APP_URL}/file/upload`,
@@ -168,6 +114,10 @@ export default {
           value: 1,
           label: "精品课程",
         },
+        {
+          value:2,
+          label:'其他推位'
+        }
       ],
       value2: "",
       // uploadImaUrl:`'http://172.168.11.229:9000/' + 'file/upload'`,
@@ -188,111 +138,30 @@ export default {
   },
   mounted() {
     this.courseCate = JSON.parse(localStorage.getItem("courseCate"));
-    console.log(this.processUrl, "888999");
   },
   methods: {
-    //图片上传成功
-    uploadImgSuccess(res, file) {
-      console.log(res, "imgRes");
-      console.log(file, "file");
-      this.formList.course_cover_url = process.env.VUE_APP_URL + res.data.url;
-    },
-    //视频上传过程中的加载操作
-    uploadVideoProcess(event, file, formList) {
-      console.log(event, "视频上传中1");
-      console.log(file, "视频上传中2");
-      console.log(formList, "视频上传中3");
-      console.log(file.status, "视频上传中response");
-      this.loading = true;
-    },
-    //视频上传成功
-    uploadVideoSuccess(res, file) {
-      console.log(res, "视频上传成功");
-      console.log(file);
-      let obj = {
-        blues_sort: 1,
-        video_url: file.response.data.url,
-        video_title: file.name,
-        video_duration: file.response.data.time_log,
-        video_file_name: file.response.data.name,
-      };
+    //处理从locaStorage中获取到的数据
+    dealSource(){
+      this.videoUrl = JSON.parse(localStorage.getItem("videoUrl"))
+      this.formList.course_cover_url = JSON.parse(localStorage.getItem("courseUrl"))
+      let obj = JSON.parse(localStorage.getItem("videoSource"))
       this.formList.series.push(obj);
-      this.loading = false;
-      this.videoUrl = process.env.VUE_APP_URL + res.data.url;
-    },
-    //上传之前校验文件格式
-    beforeUploadImg(file) {
-      this.loadingstate = true;
-      let index = file.name.lastIndexOf(".");
-      let extension = file.name.substr(index + 1);
-      let extensionList = [
-        "png",
-        "PNG",
-        "jpg",
-        "JPG",
-        "jpeg",
-        "JPEG",
-        "bmp",
-        "BMP",
-      ];
-      let isLt2M = file.size / 1024 / 1024 < 10;
-      if (!isLt2M) {
-        this.$message({
-          message: "封面不能超出10M",
-          type: "warning",
-          center: true,
-        });
-
-        return false;
-      } else if (extensionList.indexOf(extension) < 0) {
-        this.$message({
-          message: "当前文件格式不支持",
-          type: "error",
-          center: true,
-        });
-
-        return false;
-      }
-    },
-    //上传视频前的校验
-    beforeUploadVideo(file) {
-      this.loadingstate = true;
-      let index = file.name.lastIndexOf(".");
-      let extension = file.name.substr(index + 1);
-      let extensionList = ["mp4"];
-      if (extensionList.indexOf(extension) < 0) {
-        this.$message.error("上传视频的格式应该为mp4格式");
-
-        return false;
-      }
     },
     //发送表单提交过程
-    submitFormList() {
-      this.$http
+   submitFormList() {
+     this.dealSource()
+     this.$http
         .post("/course/add", {
           ...this.formList,
-        })
-        .then((res) => {
+        }
+        ).then((res,err) => {
+        if(err) return
           if (res.data.message == "success") {
             this.$router.push("/imporantPages");
           } else {
             this.$message.warning(res.data.message);
           }
-        });
-    },
-  },
-  //计算属性这里是获取用户token，然后再发送请求时，加上用户的Authenticator进行发送请求
-  computed: {
-    //带上请求头用户的token，不然不生效果
-    headersData() {
-      let loginToken = sessionStorage.getItem("token");
-      if (loginToken) {
-        // 跳转登录
-        return {
-          Authenticator: loginToken,
-        };
-      }
-      return false;
+         });
     },
   },
 };
@@ -326,7 +195,7 @@ export default {
 }
 .title {
   margin-left: 57px;
-  margin-top: 40px;
+  margin-top: 62px;
   width: 104px;
   height: 24px;
   font-size: 14px;
@@ -370,7 +239,7 @@ export default {
 }
 .textarea {
   margin-left: 57px;
-  margin-top: 20px;
+  margin-top: 75px;
   width: 360px;
   height: 112px;
   font-size: 14px;

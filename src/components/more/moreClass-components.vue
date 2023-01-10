@@ -23,7 +23,7 @@
           <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
         </el-upload>
         <img
-          :src="'http://172.168.11.229:9000' + list.course_cover_url"
+          :src="list.course_cover_url"
           alt=""
           class="img-cover"
           v-else
@@ -155,50 +155,17 @@ export default {
     return {
       currentIdx:0,
       options1: [
-        {
-          value: "产品经理",
-          label: "产品经理",
-        },
-        {
-          value: "技术开发",
-          label: "技术开发",
-        },
-        {
-          value: "运营推广",
-          label: "运营推广",
-        },
-        {
-          value: "内部讲堂",
-          label: "内部讲堂",
-        },
-        {
-          value: "职场通用素质",
-          label: "职场通用素质",
-        },
-        {
-          value: "产品与设计",
-          label: "产品与设计",
-        },
-        {
-          value: "管理与领导力",
-          label: "管理与领导力",
-        },
-        {
-          value: "数据分析",
-          label: "数据分析",
-        },
-        {
-          value: "其他",
-          label: "其他",
-        },
       ],
       value1: "",
       //推荐位
       options2: [
-        {
-          value: "首页精品推荐位",
-          label: "首页精品推荐位",
-        }
+          {
+            value: 1,
+            label: "精品课程",
+          },{
+            value:0,
+            label:"其他推位"
+          }
       ],
       value2: "",
       list:{},
@@ -223,7 +190,7 @@ export default {
     this.getListSource()  //请求回传的视频资源
         //接收返回来的数据
         this.list = this.$route.query.form
-
+        this.options1 = JSON.parse(localStorage.getItem("courseCate"))
   },
   methods:{
     getListSource(){

@@ -53,8 +53,8 @@
             <i class="el-icon-upload"></i>
             <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
           </el-upload>
-          <img :src="'http://172.168.11.229:9000' + list.course_cover_url" alt="" class="img-cover" v-else>
-          <img :src="'http://172.168.11.229:9000' + formList.course_cover_url" alt="" class="img-cover" v-show="formList.course_cover_url !== ''">
+          <img :src="list.course_cover_url" alt="" class="img-cover" v-else>
+          <img :src="formList.course_cover_url" alt="" class="img-cover" v-show="formList.course_cover_url !== ''">
         </div>
         <!-- 下方文字描述区域 -->
         <h5>推荐图片尺寸 300*170px大小＜30M格式推荐 png、jpg</h5>
@@ -117,49 +117,16 @@
   data(){
     return{
       options1: [
-          {
-            value: 1,
-            label: "产品经理",
-          },
-          {
-            value: 2,
-            label: "技术开发",
-          },
-          {
-            value: 3,
-            label: "运营推广",
-          },
-          {
-            value: 4,
-            label: "内部讲堂",
-          },
-          {
-            value: 5,
-            label: "职场通用素质",
-          },
-          {
-            value: 6,
-            label: "产品与设计",
-          },
-          {
-            value: 7,
-            label: "管理与领导力",
-          },
-          {
-            value: 8,
-            label: "数据分析",
-          },
-          {
-            value: 100,
-            label: "其他",
-          },
         ],
         value1: "",
         //推荐位
         options2: [
           {
-            value: "精品课程",
+            value: 1,
             label: "精品课程",
+          },{
+            value:0,
+            label:"其他推位"
           }
         ],
         value2: "",
@@ -188,6 +155,7 @@
     this.list = this.$route.query.form
     this.choosePosid()
     this.list.series = JSON.parse(localStorage.getItem('series'))
+    this.options1 = JSON.parse(localStorage.getItem("courseCate"))
   },
   methods:{
     choosePosid(){

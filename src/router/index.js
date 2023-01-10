@@ -33,7 +33,7 @@ const routes = [
     {
         path: '/imporantPages',
         name: 'imporantPages',
-        component: () => import('@/pages/manager/user/important-pages.vue'),
+        component: () => import('@/pages/manager/user/manage-center/important-pages'),
         meta: {
             isAuth: true
         },
