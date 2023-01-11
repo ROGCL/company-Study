@@ -95,6 +95,8 @@ methods:{
         this.$refs.activeBar.style = 'height:95%'
       }else if(this.address == '/addMoreClassPages'){
         this.$refs.activeBar.style = 'height:108%'
+      }else if(this.address == '/addSingleClassPages'){
+        this.$refs.activeBar.style = "height:122%"
       }
     },
     //点击退出登录时的跳转
